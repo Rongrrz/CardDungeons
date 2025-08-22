@@ -1,5 +1,5 @@
 import { Players, ReplicatedStorage } from "@rbxts/services";
-import { ServerToast } from "shared/types/notification";
+import { ServerToast } from "shared/types/toast";
 
 const SendNotification = ReplicatedStorage.Remotes.SendNotification;
 

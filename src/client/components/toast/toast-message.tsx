@@ -2,7 +2,7 @@ import { useMotion, useMountEffect } from "@rbxts/pretty-react-hooks";
 import React, { ReactNode } from "@rbxts/react";
 import { useLifetimeAsync } from "@rbxts/react-lifetime-component";
 import { getColor3 } from "shared/types/color";
-import { ClientToast } from "shared/types/notification";
+import { ClientToast } from "shared/types/toast";
 
 export function ToastMessage(props: ClientToast): ReactNode {
 	const [frameSize, frameSizeMotion] = useMotion(UDim2.fromScale(0, 1));

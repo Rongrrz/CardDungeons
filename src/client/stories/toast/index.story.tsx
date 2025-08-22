@@ -2,8 +2,8 @@ import { useInterval } from "@rbxts/pretty-react-hooks";
 import React, { useState } from "@rbxts/react";
 import ReactRoblox from "@rbxts/react-roblox";
 import { CreateReactStory, Number } from "@rbxts/ui-labs";
-import { ToastViewport } from "client/components/toast-notification/toast-viewport";
-import { ClientToast } from "shared/types/notification";
+import { ToastViewport } from "client/components/toast";
+import { ClientToast } from "shared/types/toast";
 
 const controls = {
 	amount: Number(1, 1, 15),
