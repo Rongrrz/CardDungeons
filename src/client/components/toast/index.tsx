@@ -1,5 +1,5 @@
 import React, { ReactNode } from "@rbxts/react";
-import { ClientToast } from "shared/types/notification";
+import { ClientToast } from "shared/types/toast";
 import { ToastMessage } from "./toast-message";
 import { LifetimeComponent } from "@rbxts/react-lifetime-component";
 

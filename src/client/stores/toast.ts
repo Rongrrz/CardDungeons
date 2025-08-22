@@ -1,6 +1,6 @@
 import { atom } from "@rbxts/charm";
 import { ReplicatedStorage } from "@rbxts/services";
-import { ServerToast, ClientToast } from "shared/types/notification";
+import { ServerToast, ClientToast } from "shared/types/toast";
 import { TOAST_TIME } from "shared/utils/constants";
 
 //export const toastAtom = atom<Array<ClientToast>>([]);
