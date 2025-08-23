@@ -1,9 +1,9 @@
 import React from "@rbxts/react";
 import { useAtom } from "@rbxts/react-charm";
-import { CardViewport } from "client/components/battle-card";
-import { ToastViewport } from "client/components/toast";
-import { cardAtom } from "client/stores/battle-card";
-import { toastAtom } from "client/stores/toast";
+import { CardViewport } from "client/ui/app/battle-card";
+import { ToastViewport } from "client/ui/app/toast";
+import { cardAtom } from "client/atoms/battle-card";
+import { toastAtom } from "client/atoms/toast";
 
 export function App() {
 	const toastViewportItems = useAtom(toastAtom);

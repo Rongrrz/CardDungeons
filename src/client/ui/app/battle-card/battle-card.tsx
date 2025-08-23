@@ -1,7 +1,7 @@
 import { useMotion } from "@rbxts/pretty-react-hooks";
 import React, { ReactNode, useEffect, useState } from "@rbxts/react";
-import { cards } from "shared/info/cards";
-import { ClientCard } from "shared/info/cards/types";
+import { cards } from "shared/data/cards";
+import { ClientCard } from "shared/data/cards/types";
 
 type BattleCardProps = ClientCard & {
 	onHoverEnter: () => void;

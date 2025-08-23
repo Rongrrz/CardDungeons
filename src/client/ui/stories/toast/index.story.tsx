@@ -3,8 +3,8 @@ import React from "@rbxts/react";
 import { useAtom } from "@rbxts/react-charm";
 import ReactRoblox from "@rbxts/react-roblox";
 import { CreateReactStory, Number } from "@rbxts/ui-labs";
-import { ToastViewport } from "client/components/toast";
-import { newToast, toastAtom } from "client/stores/toast";
+import { ToastViewport } from "client/ui/app/toast";
+import { newToast, toastAtom } from "client/atoms/toast";
 
 const controls = {
 	amount: Number(1, 1, 15),

@@ -1,8 +1,8 @@
 import { CreateReactStory, Number } from "@rbxts/ui-labs";
 import React from "@rbxts/react";
 import ReactRoblox from "@rbxts/react-roblox";
-import { CardViewport } from "client/components/battle-card";
-import { ClientCard } from "shared/info/cards/types";
+import { CardViewport } from "client/ui/app/battle-card";
+import { ClientCard } from "shared/data/cards/types";
 
 const controls = {
 	amount: Number(1, 1, 10),

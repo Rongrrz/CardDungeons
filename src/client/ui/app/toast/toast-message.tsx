@@ -1,7 +1,7 @@
 import { useMotion, useMountEffect } from "@rbxts/pretty-react-hooks";
 import React, { ReactNode, useBinding } from "@rbxts/react";
 import { useLifetimeAsync } from "@rbxts/react-lifetime-component";
-import { toastAtom } from "client/stores/toast";
+import { toastAtom } from "client/atoms/toast";
 import { getColor3 } from "shared/types/color";
 import { ToastEntry } from "shared/types/toast";
 

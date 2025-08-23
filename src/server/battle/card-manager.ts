@@ -1,5 +1,5 @@
 import { knuthShuffleInPlace } from "shared/dsa/knuthShuffle";
-import { CardName } from "shared/info/cards/codenames";
+import { CardName } from "shared/data/cards/codenames";
 
 type Card = {
 	card: CardName;
