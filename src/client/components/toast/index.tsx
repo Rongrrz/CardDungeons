@@ -1,10 +1,11 @@
 import React, { ReactNode } from "@rbxts/react";
-import { ClientToast } from "shared/types/toast";
-import { ToastMessage } from "./toast-message";
+
 import { LifetimeComponent } from "@rbxts/react-lifetime-component";
+import { ToastMessage } from "./toast-message";
+import { ToastEntry } from "shared/types/toast";
 
 type ToastViewportProps = {
-	toasts: Set<ClientToast>;
+	toasts: Array<ToastEntry>;
 };
 
 export function ToastViewport(props: ToastViewportProps): ReactNode {
@@ -17,19 +18,19 @@ export function ToastViewport(props: ToastViewportProps): ReactNode {
 		>
 			<uilistlayout
 				Padding={new UDim(-2, -5)}
-				HorizontalAlignment={"Right"}
+				HorizontalAlignment={"Right"} // This makes the text spawn from the right
 				SortOrder={"LayoutOrder"}
 			></uilistlayout>
 
 			<LifetimeComponent>
-				{[...props.toasts].map((toast) => {
+				{props.toasts.map((toast) => {
 					return (
 						<ToastMessage
 							key={tostring(toast.id)}
 							message={tostring(toast.message)}
 							color={toast.color}
 							id={toast.id}
-						></ToastMessage>
+						/>
 					);
 				})}
 			</LifetimeComponent>
