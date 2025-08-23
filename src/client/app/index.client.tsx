@@ -7,6 +7,7 @@ const root = createRoot(new Instance("Folder"));
 const target = Players.LocalPlayer.WaitForChild("PlayerGui");
 
 const ScreenGui = new Instance("ScreenGui");
+ScreenGui.Name = "App";
 ScreenGui.Parent = target;
 
 root.render(

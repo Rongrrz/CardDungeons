@@ -14,7 +14,7 @@
 
 interface ReplicatedStorage extends Instance {
 	Remotes: Folder & {
-		SendNotification: RemoteEvent;
+		SendToastMessage: RemoteEvent;
 		PlayerInputRemote: RemoteEvent;
 	};
 }

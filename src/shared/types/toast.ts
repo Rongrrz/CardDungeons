@@ -1,10 +1,10 @@
 import { Color } from "./color";
 
-export type ServerToast = {
+export type ToastRequest = {
 	message: string;
 	color: Color;
 };
 
-export type ClientToast = ServerToast & {
+export type ToastEntry = ToastRequest & {
 	id: number;
 };

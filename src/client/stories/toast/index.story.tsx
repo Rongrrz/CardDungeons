@@ -1,9 +1,10 @@
-import { useInterval } from "@rbxts/pretty-react-hooks";
-import React, { useState } from "@rbxts/react";
+import { useMountEffect } from "@rbxts/pretty-react-hooks";
+import React from "@rbxts/react";
+import { useAtom } from "@rbxts/react-charm";
 import ReactRoblox from "@rbxts/react-roblox";
 import { CreateReactStory, Number } from "@rbxts/ui-labs";
 import { ToastViewport } from "client/components/toast";
-import { ClientToast } from "shared/types/toast";
+import { newToast, toastAtom } from "client/stores/toast";
 
 const controls = {
 	amount: Number(1, 1, 15),
@@ -13,23 +14,18 @@ type Component = {
 	amount: number;
 };
 
-function Component({ amount }: Component) {
-	// This is to simulate dropping in notifications and removing
-	const [realAmount, setRealAmount] = useState(amount);
-	useInterval(() => {
-		setRealAmount(math.max(realAmount - 1, 0));
-	}, 1);
-
-	const toastTable = new Set<ClientToast>();
-
-	for (const index of $range(1, realAmount)) {
-		toastTable.add({
-			message: `Message: ${amount - index + 1}`,
-			color: "Blue",
-			id: amount - index,
+function Component(props: Component) {
+	const toastViewportItems = useAtom(toastAtom);
+	useMountEffect(() => {
+		task.spawn(() => {
+			for (const index of $range(1, props.amount)) {
+				const message = `Message: ${props.amount - index + 1}`;
+				newToast({ message: message, color: "Blue" });
+				task.wait(0.5);
+			}
 		});
-	}
-	return <ToastViewport toasts={toastTable}></ToastViewport>;
+	});
+	return <ToastViewport toasts={toastViewportItems}></ToastViewport>;
 }
 
 export = CreateReactStory(

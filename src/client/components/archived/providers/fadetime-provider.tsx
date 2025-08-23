@@ -3,9 +3,5 @@ import { PropsWithChildren, ReactNode } from "@rbxts/react";
 import { FadetimeContext } from "client/components/archived/contexts/fadetime-context";
 
 export function FadetimeProvider({ children }: PropsWithChildren): ReactNode {
-	return (
-		<FadetimeContext.Provider value={0.5}>
-			{children}
-		</FadetimeContext.Provider>
-	);
+	return <FadetimeContext.Provider value={0.5}>{children}</FadetimeContext.Provider>;
 }

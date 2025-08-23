@@ -1,16 +1,16 @@
 import { ReplicatedStorage } from "@rbxts/services";
-import { CardName } from "shared/info/cards/card-names";
+import { CardName } from "shared/info/cards/codenames";
 import { Queue } from "shared/dsa/queue";
 import { EnemyStats } from "shared/info/enemies/enemies";
 import { EnemyName } from "shared/info/enemies/enemy-names";
+import { notify } from "@rbxts/charm";
+import { toastAllPlayers } from "server/toast/toast";
 
 // We know for sure that there will only be one battle at once
 type Card = {
 	name: CardName;
 	multiplier: number;
 };
-
-type BattleState = "start" | "playerTurn" | "enemyTurn" | "ended";
 
 type BattlePlayerStats = {
 	hp: number;
@@ -56,18 +56,14 @@ export type Battle = {
 
 let battleId = 0;
 let currentBattle: Battle | undefined = undefined;
-const PLAYER_TURN_TIME = 30;
+const PLAYER_TURN_TIME = 8;
 
 function setUpBattle(data: BattleSetUpData) {
 	// Populate enemies array with an initial batch of enemies
 	const enemies = new Array<BattleEnemy>();
 	switch (data.enemyData.type) {
 		case "continuous": {
-			for (
-				let index = 0;
-				index < data.enemyData.maxConcurrentEnemy;
-				index++
-			) {
+			for (let index = 0; index < data.enemyData.maxConcurrentEnemy; index++) {
 				enemies.push(data.enemyData.enemies.pop()!);
 			}
 			break;
@@ -89,27 +85,8 @@ function setUpBattle(data: BattleSetUpData) {
 		enemyData: data.enemyData,
 	};
 	currentBattle = battle;
-}
-
-function processBattleState() {
-	switch (currentBattle!.state) {
-		case "start": {
-			processStartBattle();
-			break;
-		}
-		case "playerTurn": {
-			processPlayerTurn();
-			break;
-		}
-		case "enemyTurn": {
-			processEnemyTurn();
-			break;
-		}
-		case "ended": {
-			processEndBattle();
-			break;
-		}
-	}
+	toastAllPlayers("Battle set up finished!");
+	processBattleState();
 }
 
 function nextBattleState(state: BattleState) {
@@ -119,6 +96,7 @@ function nextBattleState(state: BattleState) {
 
 function processStartBattle() {
 	// TODO: Initialize battlefield and character assets for users (and wait for them to say yes)
+	toastAllPlayers("Initializing battlefield and character assets...");
 	// TODO: Do any start of battle functions (boss summoning enemies, etc.) (if func, wait for players again)
 
 	// TODO: Next battle state (player/enemy, depends on type of battle, any bosses, etc.)
@@ -141,18 +119,17 @@ async function getPlayerInput() {
 			resolve();
 		};
 
-		const connection =
-			ReplicatedStorage.Remotes.PlayerInputRemote.OnServerEvent.Connect(
-				(player, data) => {
-					if (!notResponded.has(player.UserId)) return;
-					// TODO: Verify data integrity
-					// Populate data into results
-					results[player.UserId] = data as string;
+		const connection = ReplicatedStorage.Remotes.PlayerInputRemote.OnServerEvent.Connect(
+			(player, data) => {
+				if (!notResponded.has(player.UserId)) return;
+				// TODO: Verify data integrity
+				// Populate data into results
+				results[player.UserId] = data as string;
 
-					notResponded.delete(player.UserId);
-					if (notResponded.size() === 0) finish();
-				},
-			);
+				notResponded.delete(player.UserId);
+				if (notResponded.size() === 0) finish();
+			},
+		);
 
 		Promise.delay(PLAYER_TURN_TIME).andThen(finish);
 	});
@@ -161,12 +138,14 @@ async function getPlayerInput() {
 
 async function processPlayerTurn() {
 	// TODO: Get all player input
+	toastAllPlayers("Awaiting for player inputs...");
 	const { results, notResponded } = await getPlayerInput();
+	toastAllPlayers("Player inputs received, now processing");
 
 	// TODO: Do stuff with player input
 	// TODO: Replicate client effects
-	print(results);
-	print(notResponded);
+	// print(results);
+	// print(notResponded);
 
 	// TODO: Next battle state (ended/enemy)
 	nextBattleState("enemyTurn");
@@ -176,6 +155,7 @@ async function processEnemyTurn() {
 	// TODO: Generate enemy input (sort enemy input by priority)
 	// TODO: Do stuff with enemy input
 	// TODO: Replicate client effects
+	toastAllPlayers("Enemy inputs generated, calculated, replicated...");
 
 	// TODO: Next battle state (ended/player)
 	nextBattleState("playerTurn");
@@ -185,3 +165,28 @@ function processEndBattle() {
 	// TODO: Replicate client effects
 	print("Finished");
 }
+
+type BattleState = "start" | "playerTurn" | "enemyTurn" | "ended";
+const battleStateHandlers: Record<BattleState, Callback> = {
+	start: processStartBattle,
+	playerTurn: processPlayerTurn,
+	enemyTurn: processEnemyTurn,
+	ended: processEndBattle,
+} as const;
+
+function processBattleState() {
+	const state = currentBattle!.state;
+	const handler = battleStateHandlers[state];
+	if (handler) handler();
+}
+
+task.wait(3);
+toastAllPlayers("Battle starting!");
+setUpBattle({
+	enemyData: {
+		type: "continuous",
+		enemies: new Queue(),
+		maxConcurrentEnemy: 0,
+	},
+	playerData: [],
+});
