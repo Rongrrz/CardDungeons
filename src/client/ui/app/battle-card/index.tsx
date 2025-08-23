@@ -1,7 +1,7 @@
 import React, { ReactNode, useState } from "@rbxts/react";
-import { cards } from "shared/info/cards";
+import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
-import { ClientCard } from "shared/info/cards/types";
+import { ClientCard } from "shared/data/cards/types";
 
 type CardViewportProps = {
 	cards: Array<ClientCard>;

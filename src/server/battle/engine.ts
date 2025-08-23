@@ -1,8 +1,8 @@
 import { ReplicatedStorage } from "@rbxts/services";
-import { CardName } from "shared/info/cards/codenames";
+import { CardName } from "shared/data/cards/codenames";
 import { Queue } from "shared/dsa/queue";
-import { EnemyStats } from "shared/info/enemies/enemies";
-import { EnemyName } from "shared/info/enemies/enemy-names";
+import { EnemyStats } from "shared/data/enemies/enemies";
+import { EnemyName } from "shared/data/enemies/enemy-names";
 import { notify } from "@rbxts/charm";
 import { toastAllPlayers } from "server/toast/toast";
 
