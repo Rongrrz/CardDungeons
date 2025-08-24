@@ -3,3 +3,7 @@
 /include
 *.tsbuildinfo
 sourcemap.json
+
+# fully managed rojo
+build.rbxl
+*.lock

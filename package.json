@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@rbxts/charm": "^0.10.0",
+    "@rbxts/immut": "^0.4.4-ts.0",
     "@rbxts/luau-polyfill": "^1.1.3",
     "@rbxts/pretty-react-hooks": "^0.6.4",
     "@rbxts/react": "^17.2.3",
