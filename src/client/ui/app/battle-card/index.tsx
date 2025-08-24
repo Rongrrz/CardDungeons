@@ -9,7 +9,6 @@ type CardViewportProps = {
 
 export function CardViewport(props: CardViewportProps): ReactNode {
 	const [tooltip, setTooltip] = useBinding<string>("");
-	const [itemIndex, setItemIndex] = useBinding<number>(-1);
 
 	return (
 		<>
@@ -17,7 +16,7 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 				AnchorPoint={new Vector2(0.5, 1)}
 				Size={UDim2.fromScale(0.5, 0.1)}
 				Position={new UDim2(0.5, 0, 0.8, -15)}
-				Text={tooltip}
+				Text={tooltip.getValue()}
 				TextWrapped={true}
 				TextYAlignment={"Bottom"}
 				BorderSizePixel={0}
@@ -45,11 +44,10 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 							quality={c.quality}
 							onHoverEnter={() => {
 								const text = cards[c.card].getDesc(c.quality);
-								setTooltip(text);
-								setItemIndex(index);
+								task.delay(0, () => setTooltip(text));
 							}}
 							onHoverExit={() => {
-								if (itemIndex.getValue() === index) setTooltip("");
+								setTooltip("");
 							}}
 						/>
 					);
