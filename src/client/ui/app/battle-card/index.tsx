@@ -1,4 +1,4 @@
-import React, { ReactNode, useBinding, useState } from "@rbxts/react";
+import React, { ReactNode, useBinding } from "@rbxts/react";
 import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
 import { ClientCard } from "shared/data/cards/types";
@@ -46,9 +46,7 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 								const text = cards[c.card].getDesc(c.quality);
 								task.delay(0, () => setTooltip(text));
 							}}
-							onHoverExit={() => {
-								setTooltip("");
-							}}
+							onHoverExit={() => setTooltip("")}
 						/>
 					);
 				})}
