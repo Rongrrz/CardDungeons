@@ -1,10 +1,11 @@
-import { ReplicatedStorage } from "@rbxts/services";
+import { Players, ReplicatedStorage } from "@rbxts/services";
 import { CardName } from "shared/data/cards/codenames";
 import { Queue } from "shared/dsa/queue";
-import { EnemyStats } from "shared/data/enemies/enemies";
-import { EnemyName } from "shared/data/enemies/enemy-names";
-import { notify } from "@rbxts/charm";
+
+import { EnemyName } from "shared/data/enemies/codenames";
 import { toastAllPlayers } from "server/toast/toast";
+import { EnemyStats } from "shared/data/enemies/types";
+import { PlayerCardManager } from "./card-manager";
 
 // We know for sure that there will only be one battle at once
 type Card = {
@@ -20,8 +21,7 @@ type BattlePlayerStats = {
 type BattlePlayer = {
 	id: number;
 	stats: BattlePlayerStats;
-	deck: Array<Card>;
-	hand: Array<Card>;
+	deck: PlayerCardManager;
 };
 
 type BattleEnemy = {
@@ -94,10 +94,56 @@ function nextBattleState(state: BattleState) {
 	processBattleState();
 }
 
+// TODO: This function is dangerously similar to getPlayerInput
+async function getPlayerInitialized() {
+	const results: Record<number, string | undefined> = {};
+	const playerIds = currentBattle!.players.map((player) => player.id);
+	const notResponded = new Set(playerIds);
+	await new Promise<void>((resolve) => {
+		let finished = false;
+		const finish = () => {
+			if (finished) {
+				print("Forced-finish failed: Already finished.");
+				return;
+			}
+			finished = true;
+			connection.Disconnect();
+			resolve();
+		};
+
+		const connection = ReplicatedStorage.Remotes.InitializeBattleVisuals.OnServerEvent.Connect(
+			(player, data) => {
+				if (!notResponded.has(player.UserId)) return;
+				// TODO: Verify data integrity
+				// Populate data into results
+				results[player.UserId] = data as string;
+
+				notResponded.delete(player.UserId);
+				if (notResponded.size() === 0) finish();
+			},
+		);
+
+		playerIds.forEach((playerId) => {
+			// TODO: Rename all occurrences of playerId into userId
+			const player = Players.GetPlayerByUserId(playerId);
+			if (!player) return; // TODO: What happens when user leaves midway?
+			ReplicatedStorage.Remotes.InitializeBattleVisuals.FireClient(player);
+		});
+
+		Promise.delay(5).andThen(finish);
+	});
+	return { results, notResponded };
+}
+
 function processStartBattle() {
-	// TODO: Initialize battlefield and character assets for users (and wait for them to say yes)
+	// Initialize battlefield and character assets for users
+	// TODO: -> Implement client-side receiving
+	// TODO: -> What happens for players who are NOT initialized?
 	toastAllPlayers("Initializing battlefield and character assets...");
+	getPlayerInitialized();
+
 	// TODO: Do any start of battle functions (boss summoning enemies, etc.) (if func, wait for players again)
+	// Empty/No-code for now
 
 	// TODO: Next battle state (player/enemy, depends on type of battle, any bosses, etc.)
 	nextBattleState("playerTurn");
@@ -119,7 +165,7 @@ async function getPlayerInput() {
 			resolve();
 		};
 
-		const connection = ReplicatedStorage.Remotes.PlayerInputRemote.OnServerEvent.Connect(
+		const connection = ReplicatedStorage.Remotes.ReceivePlayerInput.OnServerEvent.Connect(
 			(player, data) => {
 				if (!notResponded.has(player.UserId)) return;
 				// TODO: Verify data integrity
@@ -140,12 +186,13 @@ async function processPlayerTurn() {
 	// TODO: Get all player input
 	toastAllPlayers("Awaiting for player inputs...");
 	const { results, notResponded } = await getPlayerInput();
-	toastAllPlayers("Player inputs received, now processing");
-
-	// TODO: Do stuff with player input
-	// TODO: Replicate client effects
 	// print(results);
 	// print(notResponded);
+	toastAllPlayers("Player inputs received, now processing");
+
+	// TODO: Calculate results of player inputs (damage, heal, buffs, etc.)
+	// TODO: Replicate the calculated results to clients
+	// TODO: Check for battle end status
 
 	// TODO: Next battle state (ended/enemy)
 	nextBattleState("enemyTurn");
@@ -155,6 +202,7 @@ async function processEnemyTurn() {
 	// TODO: Generate enemy input (sort enemy input by priority)
 	// TODO: Do stuff with enemy input
 	// TODO: Replicate client effects
+	// TODO: Check for battle end status
 	toastAllPlayers("Enemy inputs generated, calculated, replicated...");
 
 	// TODO: Next battle state (ended/player)
@@ -180,8 +228,9 @@ function processBattleState() {
 	if (handler) handler();
 }
 
+// Create a battle
 task.wait(3);
-toastAllPlayers("Battle starting!");
+toastAllPlayers("Creating a battle");
 setUpBattle({
 	enemyData: {
 		type: "continuous",
