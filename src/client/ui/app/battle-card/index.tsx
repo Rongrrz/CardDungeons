@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from "@rbxts/react";
+import React, { ReactNode, useBinding, useState } from "@rbxts/react";
 import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
 import { ClientCard } from "shared/data/cards/types";
@@ -8,7 +8,8 @@ type CardViewportProps = {
 };
 
 export function CardViewport(props: CardViewportProps): ReactNode {
-	const [tooltip, setTooltip] = useState<string>("");
+	const [tooltip, setTooltip] = useBinding<string>("");
+	const [itemIndex, setItemIndex] = useBinding<number>(-1);
 
 	return (
 		<>
@@ -44,9 +45,12 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 							quality={c.quality}
 							onHoverEnter={() => {
 								const text = cards[c.card].getDesc(c.quality);
-								task.delay(0, () => setTooltip(text));
+								setTooltip(text);
+								setItemIndex(index);
 							}}
-							onHoverExit={() => setTooltip("")}
+							onHoverExit={() => {
+								if (itemIndex.getValue() === index) setTooltip("");
+							}}
 						/>
 					);
 				})}
