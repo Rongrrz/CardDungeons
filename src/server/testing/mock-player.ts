@@ -1,5 +1,6 @@
-import { Card } from "server/battle/card-manager";
-import { PlayerData } from "server/battle/engine";
+import { PlayerData } from "shared/types/battle";
+import { Card } from "shared/types/cards";
+
 
 const mockDeck = new Array<Card>();
 for (const _ of $range(1, 15)) {

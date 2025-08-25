@@ -1,50 +1,10 @@
 import { Players, ReplicatedStorage } from "@rbxts/services";
-import { Queue } from "shared/dsa/queue";
-
-import { EnemyName } from "shared/data/enemies/codenames";
 import { toastPlayers } from "server/toast/toast";
-import { EnemyStats } from "shared/data/enemies/types";
-import { Card, PlayerCardManager } from "./card-manager";
+import { PlayerCardManager } from "./card-manager";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattlePlayer, BattlePlayerStats } from "./types";
+import { Battle, BattleEnemy, BattleSetUpData, BattleState } from "shared/types/battle";
 
 // We know for sure that there will only be one battle at once
-export type PlayerData = {
-	id: number;
-	stats: BattlePlayerStats;
-	deck: Array<Card>;
-};
-
-export type BattleEnemy = {
-	name: EnemyName;
-	stats: EnemyStats;
-};
-
-export type EnemyData =
-	| {
-			type: "continuous";
-			maxConcurrentEnemy: number;
-			enemies: Queue<BattleEnemy>;
-	  }
-	| {
-			type: "waves";
-			enemies: Queue<Array<BattleEnemy>>;
-	  };
-
-export type BattleSetUpData = {
-	playerData: Array<PlayerData>;
-	enemyData: EnemyData;
-};
-
-export type Battle = {
-	id: number;
-	turn: number;
-	state: BattleState;
-	players: Array<BattlePlayer>;
-	enemies: Array<BattleEnemy>;
-	enemyData: EnemyData;
-	playerIds: Array<number>;
-};
 
 let battleId = 0;
 let currentBattle: Battle | undefined = undefined;
@@ -79,7 +39,7 @@ export function createBattle(data: BattleSetUpData) {
 
 	// Set up the battle
 	const battle: Battle = {
-		id: battleId++,
+		id: ++battleId,
 		turn: 0,
 		state: "start",
 		players: players,
@@ -130,7 +90,7 @@ async function getPlayerInitialized() {
 			// TODO: Rename all occurrences of playerId into userId
 			const player = Players.GetPlayerByUserId(playerId);
 			if (!player) return; // TODO: What happens when user leaves midway?
-			ReplicatedStorage.Remotes.InitializeBattleVisuals.FireClient(player);
+			ReplicatedStorage.Remotes.InitializeBattleVisuals.FireClient(player, currentBattle);
 		});
 
 		Promise.delay(BF_INIT_TIME).andThen(finish);
@@ -180,6 +140,13 @@ async function getPlayerInput() {
 			},
 		);
 
+		playerIds.forEach((playerId) => {
+			// TODO: Rename all occurrences of playerId into userId
+			const player = Players.GetPlayerByUserId(playerId);
+			if (!player) return; // TODO: What happens when user leaves midway?
+			ReplicatedStorage.Remotes.ReceivePlayerInput.FireClient(player, currentBattle);
+		});
+
 		Promise.delay(PLAYER_TURN_TIME).andThen(finish);
 	});
 	return { results, notResponded };
@@ -217,7 +184,6 @@ function processEndBattle() {
 	print("Finished");
 }
 
-type BattleState = "start" | "playerTurn" | "enemyTurn" | "ended";
 const battleStateHandlers: Record<BattleState, Callback> = {
 	start: processStartBattle,
 	playerTurn: processPlayerTurn,

@@ -1,5 +1,5 @@
-import { BattleEnemy, EnemyData } from "server/battle/engine";
 import { Queue } from "shared/dsa/queue";
+import { BattleEnemy, EnemyData } from "shared/types/battle";
 
 const mockEnemies = new Queue<BattleEnemy>();
 mockEnemies.add({

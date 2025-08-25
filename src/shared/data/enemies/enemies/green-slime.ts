@@ -1,6 +1,6 @@
 import { EnemyData } from "../types";
 
-export const greenSlimeEnemy: EnemyData = {
+export const greenSlime: EnemyData = {
 	displayName: "Green Slime",
 	defaultStats: {
 		hp: 20,

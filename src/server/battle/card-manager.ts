@@ -1,24 +1,20 @@
 import { knuthShuffleInPlace } from "shared/dsa/knuthShuffle";
-import { CardName } from "shared/data/cards/codenames";
+import { IPlayerCardManager } from "shared/interfaces/player-card-manager";
+import { Card } from "shared/types/cards";
 
-export type Card = {
-	card: CardName;
-	quality: number;
-};
-
-export class PlayerCardManager {
+export class PlayerCardManager implements IPlayerCardManager {
 	// deck -> hand -> used; deck = [deck + used]
 	private deck: Array<Card>;
 	private used = new Array<Card>(); // Keeps track of the used indexes in deck
 	private hand = new Array<Card>(); // Cards player current have in their hand
-	private totalCards: number;
+	private readonly totalCards: number;
 
 	public constructor(deck: Array<Card>) {
 		this.totalCards = deck.size();
 		this.deck = [...deck];
 
 		// Pollute the player's deck with "Empty" cards if needed
-		while (this.deck.size() < 10) {
+		while (this.totalCards < 10) {
 			this.deck.push({
 				card: "empty",
 				quality: 0,
@@ -30,5 +26,9 @@ export class PlayerCardManager {
 		for (let i = 0; i < 3; i++) {
 			this.hand.push(deck.pop()!);
 		}
+	}
+
+	public getHand() {
+		return this.hand;
 	}
 }
