@@ -1,0 +1,20 @@
+import { Card } from "server/battle/card-manager";
+import { PlayerData } from "server/battle/engine";
+
+const mockDeck = new Array<Card>();
+for (const _ of $range(1, 15)) {
+	mockDeck.push({
+		card: "fireball",
+		quality: math.random(80, 100),
+	});
+}
+
+export const mockThetaEngineer: PlayerData = {
+	id: 8306213857,
+	stats: {
+		hp: 100,
+		attack: 15,
+		defense: 5,
+	},
+	deck: mockDeck,
+};
