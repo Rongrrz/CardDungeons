@@ -1,35 +1,26 @@
 import { Players, ReplicatedStorage } from "@rbxts/services";
-import { CardName } from "shared/data/cards/codenames";
 import { Queue } from "shared/dsa/queue";
 
 import { EnemyName } from "shared/data/enemies/codenames";
-import { toastAllPlayers } from "server/toast/toast";
+import { toastPlayers } from "server/toast/toast";
 import { EnemyStats } from "shared/data/enemies/types";
-import { PlayerCardManager } from "./card-manager";
+import { Card, PlayerCardManager } from "./card-manager";
+import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
+import { BattlePlayer, BattlePlayerStats } from "./types";
 
 // We know for sure that there will only be one battle at once
-type Card = {
-	name: CardName;
-	multiplier: number;
-};
-
-type BattlePlayerStats = {
-	hp: number;
-	attack: number;
-	defense: number;
-};
-type BattlePlayer = {
+export type PlayerData = {
 	id: number;
 	stats: BattlePlayerStats;
-	deck: PlayerCardManager;
+	deck: Array<Card>;
 };
 
-type BattleEnemy = {
+export type BattleEnemy = {
 	name: EnemyName;
 	stats: EnemyStats;
 };
 
-type EnemyData =
+export type EnemyData =
 	| {
 			type: "continuous";
 			maxConcurrentEnemy: number;
@@ -41,7 +32,7 @@ type EnemyData =
 	  };
 
 export type BattleSetUpData = {
-	playerData: Array<BattlePlayer>;
+	playerData: Array<PlayerData>;
 	enemyData: EnemyData;
 };
 
@@ -52,13 +43,13 @@ export type Battle = {
 	players: Array<BattlePlayer>;
 	enemies: Array<BattleEnemy>;
 	enemyData: EnemyData;
+	playerIds: Array<number>;
 };
 
 let battleId = 0;
 let currentBattle: Battle | undefined = undefined;
-const PLAYER_TURN_TIME = 8;
 
-function setUpBattle(data: BattleSetUpData) {
+export function createBattle(data: BattleSetUpData) {
 	// Populate enemies array with an initial batch of enemies
 	const enemies = new Array<BattleEnemy>();
 	switch (data.enemyData.type) {
@@ -75,17 +66,29 @@ function setUpBattle(data: BattleSetUpData) {
 		}
 	}
 
+	// Create a card manager for each player
+	const playerIds: Array<number> = [];
+	const players = data.playerData.map((d) => {
+		playerIds.push(d.id);
+		return {
+			id: d.id,
+			stats: d.stats,
+			cardManager: new PlayerCardManager(d.deck),
+		};
+	});
+
 	// Set up the battle
 	const battle: Battle = {
 		id: battleId++,
 		turn: 0,
 		state: "start",
-		players: data.playerData,
+		players: players,
 		enemies: enemies,
 		enemyData: data.enemyData,
+		playerIds: playerIds,
 	};
 	currentBattle = battle;
-	toastAllPlayers("Battle set up finished!");
+	toastPlayers(currentBattle.playerIds, "Battle set up finished!");
 	processBattleState();
 }
 
@@ -130,17 +133,17 @@ async function getPlayerInitialized() {
 			ReplicatedStorage.Remotes.InitializeBattleVisuals.FireClient(player);
 		});
 
-		Promise.delay(5).andThen(finish);
+		Promise.delay(BF_INIT_TIME).andThen(finish);
 	});
 	return { results, notResponded };
 }
 
-function processStartBattle() {
+async function processStartBattle() {
 	// Initialize battlefield and character assets for users
 	// TODO: -> Implement client-side receiving
 	// TODO: -> What happens for players who are NOT initialized?
-	toastAllPlayers("Initializing battlefield and character assets...");
-	getPlayerInitialized();
+	toastPlayers(currentBattle!.playerIds, "Initializing battlefield and character assets...");
+	await getPlayerInitialized();
 
 	// TODO: Do any start of battle functions (boss summoning enemies, etc.) (if func, wait for players again)
 	// Empty/No-code for now
@@ -184,11 +187,11 @@ async function getPlayerInput() {
 
 async function processPlayerTurn() {
 	// TODO: Get all player input
-	toastAllPlayers("Awaiting for player inputs...");
+	toastPlayers(currentBattle!.playerIds, "Awaiting for player inputs...");
 	const { results, notResponded } = await getPlayerInput();
 	// print(results);
 	// print(notResponded);
-	toastAllPlayers("Player inputs received, now processing");
+	toastPlayers(currentBattle!.playerIds, "Player inputs received, now processing");
 
 	// TODO: Calculate results of player inputs (damage, heal, buffs, etc.)
 	// TODO: Replicate the calculated results to clients
@@ -203,7 +206,7 @@ async function processEnemyTurn() {
 	// TODO: Do stuff with enemy input
 	// TODO: Replicate client effects
 	// TODO: Check for battle end status
-	toastAllPlayers("Enemy inputs generated, calculated, replicated...");
+	toastPlayers(currentBattle!.playerIds, "Enemy inputs generated, calculated, replicated...");
 
 	// TODO: Next battle state (ended/player)
 	nextBattleState("playerTurn");
@@ -227,15 +230,3 @@ function processBattleState() {
 	const handler = battleStateHandlers[state];
 	if (handler) handler();
 }
-
-// Create a battle
-task.wait(3);
-toastAllPlayers("Creating a battle");
-setUpBattle({
-	enemyData: {
-		type: "continuous",
-		enemies: new Queue(),
-		maxConcurrentEnemy: 0,
-	},
-	playerData: [],
-});

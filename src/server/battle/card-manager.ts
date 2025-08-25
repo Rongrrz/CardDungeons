@@ -1,7 +1,7 @@
 import { knuthShuffleInPlace } from "shared/dsa/knuthShuffle";
 import { CardName } from "shared/data/cards/codenames";
 
-type Card = {
+export type Card = {
 	card: CardName;
 	quality: number;
 };
@@ -18,7 +18,7 @@ export class PlayerCardManager {
 		this.deck = [...deck];
 
 		// Pollute the player's deck with "Empty" cards if needed
-		while (this.deck.size() > 10) {
+		while (this.deck.size() < 10) {
 			this.deck.push({
 				card: "empty",
 				quality: 0,
