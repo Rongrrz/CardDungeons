@@ -9,8 +9,9 @@ type CollectionOptions = {
 };
 
 export async function collectPlayerResponses(opts: CollectionOptions) {
+	const { players, collectionEvent, initialization, timeout } = opts;
 	const responses = new Map<Player, unknown[]>();
-	const pending = new Set([...opts.players]);
+	const pending = new Set([...players]);
 
 	await new Promise<void>((resolve) => {
 		const finish = once(() => {
@@ -19,7 +20,7 @@ export async function collectPlayerResponses(opts: CollectionOptions) {
 			resolve();
 		});
 
-		const collectionConn = opts.collectionEvent.OnServerEvent.Connect((player, ...args) => {
+		const collectionConn = collectionEvent.OnServerEvent.Connect((player, ...args) => {
 			if (!pending.has(player)) return;
 
 			// TODO: Verify data integrity; validator?
@@ -35,8 +36,8 @@ export async function collectPlayerResponses(opts: CollectionOptions) {
 			if (pending.size() === 0) finish();
 		});
 
-		opts.players.forEach((player) => opts.initialization(player));
-		task.delay(opts.timeout, finish);
+		players.forEach((player) => initialization(player));
+		Promise.delay(timeout).andThen(finish);
 	});
 	return { responses, pending };
 }
