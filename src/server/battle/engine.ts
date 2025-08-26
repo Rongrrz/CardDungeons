@@ -1,8 +1,8 @@
 import { Players, ReplicatedStorage } from "@rbxts/services";
-import { toastPlayers } from "server/toast/toast";
+import { toastPlayer, toastPlayers } from "server/toast/toast";
 import { PlayerCardManager } from "./card-manager";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { Battle, BattleEnemy, BattleSetUpData, BattleState } from "shared/types/battle";
+import { BattleEnemy, BattleSetUpData, Battle, BattleState } from "shared/types/battle";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 
 // We know for sure that there will only be one battle at once
@@ -65,11 +65,9 @@ async function processStartBattle() {
 	toastPlayers(currentBattle!.participants, "Initializing battlefield and character assets...");
 	await getPlayerInitialized();
 
-	// TODO: Do any start of battle functions (boss summoning enemies, etc.) (if func, wait for players again)
-	// Empty/No-code for now
+	// TODO: Enemy head-start turn, special-effects (Wait for players again)
 
-	// TODO: Next battle state (player/enemy, depends on type of battle, any bosses, etc.)
-	nextBattleState("playerTurn");
+	nextBattleState("input");
 }
 
 async function getPlayerInitialized() {
@@ -92,42 +90,41 @@ async function getPlayerInput() {
 	});
 }
 
-async function processPlayerTurn() {
-	// TODO: Get all player input
-	toastPlayers(currentBattle!.participants, "Awaiting for player inputs...");
+// TODO: Add battle-ended check
+async function collectTurnInput() {
+	// TODO: Get player and enemy inputs with Promise.all
+	toastPlayers(currentBattle!.participants, "Awaiting inputs...");
 	const { responses, pending } = await getPlayerInput();
-	// print(results);
-	// print(notResponded);
-	toastPlayers(currentBattle!.participants, "Player inputs received, now processing");
+	toastPlayers(currentBattle!.participants, "Inputs phase finished, now processing");
 
 	// TODO: Calculate results of player inputs (damage, heal, buffs, etc.)
 	// TODO: Replicate the calculated results to clients
 	// TODO: Check for battle end status
 
 	// TODO: Next battle state (ended/enemy)
-	nextBattleState("enemyTurn");
+	nextBattleState("calculate");
 }
 
-async function processEnemyTurn() {
-	// TODO: Generate enemy input (sort enemy input by priority)
-	// TODO: Do stuff with enemy input
-	// TODO: Replicate client effects
-	// TODO: Check for battle end status
-	toastPlayers(currentBattle!.participants, "Enemy inputs generated, calculated, replicated...");
+function calculateTurnInput() {
+	toastPlayers(currentBattle!.participants, "Inputs phase finished, now processing");
+	nextBattleState("replicate");
+}
 
-	// TODO: Next battle state (ended/player)
-	nextBattleState("playerTurn");
+function replicateTurnEffects() {
+	toastPlayers(currentBattle!.participants, "Replicating turn effects");
+	nextBattleState("input");
 }
 
 function processEndBattle() {
-	// TODO: Replicate client effects
+	// TODO: Replicate end-of-battle effects
 	print("Finished");
 }
 
 const battleStateHandlers: Record<BattleState, Callback> = {
 	start: processStartBattle,
-	playerTurn: processPlayerTurn,
-	enemyTurn: processEnemyTurn,
+	input: collectTurnInput,
+	calculate: calculateTurnInput,
+	replicate: replicateTurnEffects,
 	ended: processEndBattle,
 } as const;
 

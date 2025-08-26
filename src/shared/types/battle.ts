@@ -4,7 +4,7 @@ import { Queue } from "shared/dsa/queue";
 import { Card } from "./cards";
 import { IPlayerCardManager } from "shared/interfaces/player-card-manager";
 
-export type BattleState = "start" | "playerTurn" | "enemyTurn" | "ended";
+export type BattleState = "start" | "input" | "calculate" | "replicate" | "ended";
 
 export type BattlePlayerStats = {
 	hp: number;
@@ -29,16 +29,17 @@ export type BattleEnemy = {
 	stats: EnemyStats;
 };
 
-export type EnemyData =
-	| {
-			type: "continuous";
-			maxConcurrentEnemy: number;
-			enemies: Queue<BattleEnemy>;
-	  }
-	| {
-			type: "waves";
-			enemies: Queue<Array<BattleEnemy>>;
-	  };
+type ContinuousEnemies = {
+	type: "continuous";
+	maxConcurrentEnemy: number;
+	enemies: Queue<BattleEnemy>;
+};
+
+type EnemyWaves = {
+	type: "waves";
+	enemies: Queue<Array<BattleEnemy>>;
+};
+export type EnemyData = ContinuousEnemies | EnemyWaves;
 
 export type BattleSetUpData = {
 	playerData: Array<PlayerData>;

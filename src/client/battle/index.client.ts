@@ -1,7 +1,7 @@
 import { ReplicatedStorage, Workspace } from "@rbxts/services";
 import { playerModel } from "client/constants/battle";
 import { enemyModels } from "shared/data/enemies/models";
-import { Battle } from "shared/types/battle";
+import { OldBattle } from "shared/types/battle";
 
 const receivePlayerInput = ReplicatedStorage.Remotes.ReceivePlayerInput;
 const initializeBattleVisuals = ReplicatedStorage.Remotes.InitializeBattleVisuals;
@@ -10,7 +10,7 @@ function handleReceivePlayerInput() {
 	// print("Handle Receive Player Input");
 }
 
-function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
+function handleInitializeBattleVisuals(battle: Omit<OldBattle, "enemyData">) {
 	battle.enemies.forEach((enemy, index) => {
 		const model = enemyModels[enemy.name] ?? enemyModels.greenSlime;
 		const clone = model.Clone();
