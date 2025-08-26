@@ -93,9 +93,8 @@ async function getPlayerInput() {
 // TODO: Add battle-ended check
 async function collectTurnInput() {
 	// TODO: Get player and enemy inputs with Promise.all
-	toastPlayers(currentBattle!.participants, "Awaiting inputs...");
+	toastPlayers(currentBattle!.participants, "Collecting inputs...");
 	const { responses, pending } = await getPlayerInput();
-	toastPlayers(currentBattle!.participants, "Inputs phase finished, now processing");
 
 	// TODO: Calculate results of player inputs (damage, heal, buffs, etc.)
 	// TODO: Replicate the calculated results to clients
@@ -106,12 +105,14 @@ async function collectTurnInput() {
 }
 
 function calculateTurnInput() {
-	toastPlayers(currentBattle!.participants, "Inputs phase finished, now processing");
+	toastPlayers(currentBattle!.participants, "Calculating turn");
+	task.wait(2);
 	nextBattleState("replicate");
 }
 
 function replicateTurnEffects() {
 	toastPlayers(currentBattle!.participants, "Replicating turn effects");
+	task.wait(2);
 	nextBattleState("input");
 }
 

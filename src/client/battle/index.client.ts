@@ -1,4 +1,5 @@
 import { ReplicatedStorage, Workspace } from "@rbxts/services";
+import { inputtingAtom } from "client/atoms/battle-inputting";
 import { playerModel } from "client/constants/battle";
 import { enemyModels } from "shared/data/enemies/models";
 import { Battle } from "shared/types/battle";
@@ -6,7 +7,9 @@ import { Battle } from "shared/types/battle";
 const receivePlayerInput = ReplicatedStorage.Remotes.ReceivePlayerInput;
 const initializeBattleVisuals = ReplicatedStorage.Remotes.InitializeBattleVisuals;
 
+// TODO: Change server-side receiver to be RemoteFunction, for invalid player input
 function handleReceivePlayerInput() {
+	inputtingAtom((curr) => !curr);
 	// print("Handle Receive Player Input");
 }
 
