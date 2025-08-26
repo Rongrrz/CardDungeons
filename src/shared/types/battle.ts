@@ -52,5 +52,5 @@ export type Battle = {
 	players: Array<BattlePlayer>;
 	enemies: Array<BattleEnemy>;
 	enemyData: EnemyData;
-	playerIds: Array<number>;
+	participants: Array<Player>;
 };

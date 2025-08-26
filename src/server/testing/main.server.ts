@@ -5,7 +5,6 @@ import { mockThetaEngineer } from "./mock-player";
 
 // Create a battle
 task.wait(3);
-toastAllPlayers("Creating a battle");
 createBattle({
 	enemyData: mockEnemyData,
 	playerData: [mockThetaEngineer],

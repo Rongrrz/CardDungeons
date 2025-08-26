@@ -7,7 +7,7 @@ const receivePlayerInput = ReplicatedStorage.Remotes.ReceivePlayerInput;
 const initializeBattleVisuals = ReplicatedStorage.Remotes.InitializeBattleVisuals;
 
 function handleReceivePlayerInput() {
-	print("Handle Receive Player Input");
+	// print("Handle Receive Player Input");
 }
 
 function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
@@ -31,6 +31,7 @@ function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
 		clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));
 		clone.Parent = Workspace.Temporary.BattlePlayers;
 	});
+	initializeBattleVisuals.FireServer(); // Tells the player that we have finished initializing
 }
 
 receivePlayerInput.OnClientEvent.Connect(handleReceivePlayerInput);
