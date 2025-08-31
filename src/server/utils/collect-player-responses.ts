@@ -1,15 +1,19 @@
+import { ArrayUtilities, Object } from "@rbxts/luau-polyfill";
 import { Players } from "@rbxts/services";
+import { PlayerIdMapOrArray } from "shared/types/player";
 import { once } from "shared/utils/once";
+import { getPlayerByUserId, getPlayers } from "shared/utils/player";
 
 type CollectionOptions = {
-	players: ReadonlyArray<Player>;
+	players: PlayerIdMapOrArray;
 	collectionEvent: RemoteEvent;
 	timeout: number;
 	initialization: (player: Player) => void;
 };
 
 export async function collectPlayerResponses(opts: CollectionOptions) {
-	const { players, collectionEvent, initialization, timeout } = opts;
+	const { collectionEvent, initialization, timeout } = opts;
+	const players = getPlayers(opts.players);
 	const responses = new Map<Player, unknown[]>();
 	const pending = new Set([...players]);
 

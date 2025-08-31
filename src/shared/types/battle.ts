@@ -13,7 +13,6 @@ export type BattlePlayerStats = {
 };
 
 export type BattlePlayer = {
-	id: number;
 	stats: BattlePlayerStats;
 	cardManager: IPlayerCardManager;
 };
@@ -50,8 +49,7 @@ export type Battle = {
 	id: number;
 	turn: number;
 	state: BattleState;
-	players: Array<BattlePlayer>;
+	players: Map<number, BattlePlayer>;
 	enemies: Array<BattleEnemy>;
 	enemyData: EnemyData;
-	participants: Array<Player>;
 };

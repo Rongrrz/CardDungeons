@@ -1,48 +1,55 @@
 import { Players, ReplicatedStorage, Workspace } from "@rbxts/services";
-import { cardTargetsAtom, inputtingAtom } from "client/atoms/battle-inputting";
+import { cardAtom, cardTargetsAtom, inputtingAtom } from "client/atoms/battle-inputting";
 import { playerModel } from "client/constants/battle";
 import { Selected } from "client/constants/selected";
 import { enemyModels } from "shared/data/enemies/models";
-import { Battle } from "shared/types/battle";
+import { Battle, BattlePlayer } from "shared/types/battle";
+import { Card } from "shared/types/cards";
 
 const receivePlayerInput = ReplicatedStorage.Remotes.ReceivePlayerInput;
 const initializeBattleVisuals = ReplicatedStorage.Remotes.InitializeBattleVisuals;
 
-const mouse = Players.LocalPlayer.GetMouse();
 const targets = new Array<Model>();
-let prevTarget: Instance | undefined = undefined;
 
 // TODO: Change server-side receiver to be RemoteFunction, for invalid player input
-function handleReceivePlayerInput() {
-	inputtingAtom((curr) => !curr);
-	// print("Handle Receive Player Input");
+function handleReceivePlayerInput(hand: Array<Card>) {
+	// Populate the inputting GUI
+	cardAtom();
+
+	// Bring in inputting GUI
+	inputtingAtom(true);
+
+	// Connections for clicking on them buttons somehow someway
+
+	// Once finish
+	// inputtingAtom(false);
 }
 
 function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
-	const mouseConn = mouse.Move.Connect(() => {
-		const target = mouse.Target;
-		if (target === prevTarget) return;
-		prevTarget = target;
+	// const mouseConn = mouse.Move.Connect(() => {
+	// 	const target = mouse.Target;
+	// 	if (target === prevTarget) return;
+	// 	prevTarget = target;
 
-		const hovered = target ? targets.find((e) => target.IsDescendantOf(e)) : undefined;
+	// 	const hovered = target ? targets.find((e) => target.IsDescendantOf(e)) : undefined;
 
-		cardTargetsAtom((prev) => {
-			let changed = false;
-			const updated = prev.map((entry) => {
-				const isSelected = hovered
-					? hovered === entry.model
-						? Selected.Selected
-						: Selected.NotSelected
-					: Selected.NotSelected;
-				if (entry.selected !== isSelected) {
-					changed = true;
-					return { ...entry, selected: isSelected };
-				}
-				return entry;
-			});
-			return changed ? updated : prev;
-		});
-	});
+	// 	cardTargetsAtom((prev) => {
+	// 		let changed = false;
+	// 		const updated = prev.map((entry) => {
+	// 			const isSelected = hovered
+	// 				? hovered === entry.model
+	// 					? Selected.Selected
+	// 					: Selected.NotSelected
+	// 				: Selected.NotSelected;
+	// 			if (entry.selected !== isSelected) {
+	// 				changed = true;
+	// 				return { ...entry, selected: isSelected };
+	// 			}
+	// 			return entry;
+	// 		});
+	// 		return changed ? updated : prev;
+	// 	});
+	// });
 
 	battle.enemies.forEach((enemy, index) => {
 		const model = enemyModels[enemy.name] ?? enemyModels.greenSlime;
@@ -61,10 +68,11 @@ function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
 		]);
 	});
 
-	battle.players.forEach((player, index) => {
+	let index = 0;
+	battle.players.forEach((player, id) => {
 		const clone = playerModel.Clone();
-		clone.Name = `${player.id}`;
-		const node = Workspace.Battlefield.Player.FindFirstChild(index + 1) as unknown as Part;
+		clone.Name = `${id}`;
+		const node = Workspace.Battlefield.Player.FindFirstChild(++index) as unknown as Part;
 
 		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
 		clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));

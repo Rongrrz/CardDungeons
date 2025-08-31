@@ -1,5 +1,6 @@
+import { ArrayUtilities, Object } from "@rbxts/luau-polyfill";
 import { Players, ReplicatedStorage } from "@rbxts/services";
-import { PlayerOrId } from "shared/types/player";
+import { PlayerIdMapOrArray, PlayerOrId } from "shared/types/player";
 import { ToastRequest } from "shared/types/toast";
 import { getPlayerByUserId } from "shared/utils/player";
 
@@ -21,8 +22,11 @@ export function toastPlayer(playerOrId: PlayerOrId, toast: ToastInput): void {
 	SendToast.FireClient(player, toastRequest);
 }
 
-export function toastPlayers(playersOrIds: Array<PlayerOrId>, toast: ToastInput): void {
-	for (const playerOrId of playersOrIds) toastPlayer(playerOrId, toast);
+export function toastPlayers(playerIdMap: Map<PlayerOrId, unknown>, toast: ToastInput): void;
+export function toastPlayers(playersOrIds: Array<PlayerOrId>, toast: ToastInput): void;
+export function toastPlayers(players: PlayerIdMapOrArray, toast: ToastInput): void {
+	const keys = ArrayUtilities.isArray(players) ? players : Object.keys(players);
+	for (const playerOrId of keys) toastPlayer(playerOrId, toast);
 }
 
 export function toastAllPlayers(toast: ToastInput): void {
