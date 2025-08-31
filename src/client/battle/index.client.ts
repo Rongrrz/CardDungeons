@@ -1,56 +1,78 @@
+import { peek, subscribe } from "@rbxts/charm";
 import { Players, ReplicatedStorage, Workspace } from "@rbxts/services";
-import { cardAtom, cardTargetsAtom, inputtingAtom } from "client/atoms/battle-inputting";
+import {
+	cardContainerCards,
+	cardTargets,
+	isCardContainerIn,
+	usingCardSlotAtom,
+} from "client/atoms/battle-inputting";
 import { playerModel } from "client/constants/battle";
 import { Selected } from "client/constants/selected";
 import { enemyModels } from "shared/data/enemies/models";
-import { Battle, BattlePlayer } from "shared/types/battle";
+import { Battle } from "shared/types/battle";
 import { Card } from "shared/types/cards";
 
 const receivePlayerInput = ReplicatedStorage.Remotes.ReceivePlayerInput;
 const initializeBattleVisuals = ReplicatedStorage.Remotes.InitializeBattleVisuals;
 
-const targets = new Array<Model>();
+const mouse = Players.LocalPlayer.GetMouse();
+const models = new Array<Model>();
+let prevTarget: Instance | undefined = undefined;
+
+let usedCards = new Array<Card>(); // Cards used for the current player-input cycle
+let localHand = new Array<Card>(); // Cards players have for the current player-input cycle
+
+subscribe(usingCardSlotAtom, (newState) => {
+	// TODO: Change this logic to change cardTargets when card slots are different
+	cardTargets(
+		newState === undefined
+			? []
+			: models.map((model) => ({ model: model, selected: Selected.NotSelected })),
+	);
+});
 
 // TODO: Change server-side receiver to be RemoteFunction, for invalid player input
 function handleReceivePlayerInput(hand: Array<Card>) {
-	// Populate the inputting GUI
-	cardAtom();
+	localHand = hand;
+	usedCards = [];
 
-	// Bring in inputting GUI
-	inputtingAtom(true);
+	cardContainerCards(hand); // Populate the inputting GUI
+	isCardContainerIn(true);
 
-	// Connections for clicking on them buttons somehow someway
+	const mouseConnection = mouse.Move.Connect(() => {
+		// Discontinue if no card is selected
+		if (peek(usingCardSlotAtom) === undefined) return;
+
+		// If we are hovering onto the same thing, no need to do anything either
+		const mouseTarget = mouse.Target;
+		if (mouseTarget === prevTarget) return;
+		prevTarget = mouseTarget;
+
+		const hovered = mouseTarget ? models.find((m) => mouseTarget.IsDescendantOf(m)) : undefined;
+
+		cardTargets((prev) => {
+			let changed = false;
+			const updated = prev.map((entry) => {
+				const isSelected = hovered
+					? hovered === entry.model
+						? Selected.Selected
+						: Selected.NotSelected
+					: Selected.NotSelected;
+				if (entry.selected !== isSelected) {
+					changed = true;
+					return { ...entry, selected: isSelected };
+				}
+				return entry;
+			});
+			return changed ? updated : prev;
+		});
+	});
 
 	// Once finish
 	// inputtingAtom(false);
 }
 
 function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
-	// const mouseConn = mouse.Move.Connect(() => {
-	// 	const target = mouse.Target;
-	// 	if (target === prevTarget) return;
-	// 	prevTarget = target;
-
-	// 	const hovered = target ? targets.find((e) => target.IsDescendantOf(e)) : undefined;
-
-	// 	cardTargetsAtom((prev) => {
-	// 		let changed = false;
-	// 		const updated = prev.map((entry) => {
-	// 			const isSelected = hovered
-	// 				? hovered === entry.model
-	// 					? Selected.Selected
-	// 					: Selected.NotSelected
-	// 				: Selected.NotSelected;
-	// 			if (entry.selected !== isSelected) {
-	// 				changed = true;
-	// 				return { ...entry, selected: isSelected };
-	// 			}
-	// 			return entry;
-	// 		});
-	// 		return changed ? updated : prev;
-	// 	});
-	// });
-
 	battle.enemies.forEach((enemy, index) => {
 		const model = enemyModels[enemy.name] ?? enemyModels.greenSlime;
 		const clone = model.Clone();
@@ -61,11 +83,7 @@ function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
 		clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
 		clone.Parent = Workspace.Temporary.BattleEnemies;
 
-		targets.push(clone);
-		cardTargetsAtom((current) => [
-			...current,
-			{ model: clone, selected: Selected.NotSelected },
-		]);
+		models.push(clone);
 	});
 
 	let index = 0;

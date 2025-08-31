@@ -1,11 +1,9 @@
-import { ArrayUtilities, Object } from "@rbxts/luau-polyfill";
 import { Players } from "@rbxts/services";
-import { PlayerIdMapOrArray } from "shared/types/player";
 import { once } from "shared/utils/once";
-import { getPlayerByUserId, getPlayers } from "shared/utils/player";
+import { getPlayers, PlayerOrIdGroup } from "shared/utils/player-or-id";
 
 type CollectionOptions = {
-	players: PlayerIdMapOrArray;
+	players: PlayerOrIdGroup;
 	collectionEvent: RemoteEvent;
 	timeout: number;
 	initialization: (player: Player) => void;

@@ -1,4 +1,4 @@
-import React, { ReactNode, useBinding, useEffect } from "@rbxts/react";
+import React, { ReactNode, useBinding, useEffect, useState } from "@rbxts/react";
 import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
 import { ClientCard } from "shared/data/cards/types";
@@ -13,7 +13,7 @@ const inPosition = new UDim2(0.5, 0, 1, -5);
 const outPosition = UDim2.fromScale(0.5, 1.2);
 
 export function CardViewport(props: CardViewportProps): ReactNode {
-	const [tooltip, setTooltip] = useBinding<string>("");
+	const [tooltip, setTooltip] = useState<string>("");
 	const [framePos, framePosMotion] = useMotion(outPosition);
 
 	useEffect(() => {
@@ -25,9 +25,11 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 		<>
 			<textlabel
 				AnchorPoint={new Vector2(0.5, 1)}
-				Size={UDim2.fromScale(0.5, 0.1)}
+				Size={UDim2.fromScale(0.5, 0.06)}
 				Position={new UDim2(0.5, 0, 0.8, -15)}
-				Text={tooltip.getValue()}
+				TextColor3={Color3.fromRGB(255, 255, 255)}
+				Text={tooltip}
+				TextScaled={true}
 				TextWrapped={true}
 				TextYAlignment={"Bottom"}
 				BorderSizePixel={0}
@@ -35,7 +37,8 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 			/>
 
 			<frame
-				Transparency={0.75}
+				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
+				Transparency={0.5}
 				BorderSizePixel={0}
 				Size={UDim2.fromScale(0.5, 0.2)}
 				AnchorPoint={new Vector2(0.5, 1)}
@@ -59,6 +62,7 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 								task.delay(0, () => setTooltip(text));
 							}}
 							onHoverExit={() => setTooltip("")}
+							cardSlot={index}
 						/>
 					);
 				})}

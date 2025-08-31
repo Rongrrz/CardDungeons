@@ -3,15 +3,15 @@ import { useAtom } from "@rbxts/react-charm";
 import { CardViewport } from "client/ui/app/battle-card";
 import { ToastViewport } from "client/ui/app/toast";
 import { toastAtom } from "client/atoms/toast";
-import { cardAtom, cardTargetsAtom, inputtingAtom } from "client/atoms/battle-inputting";
+import { cardContainerCards, cardTargets, isCardContainerIn } from "client/atoms/battle-inputting";
 import { TargetSelection } from "./battle-select-target/battle-select.target";
 
 export function App() {
 	const toastViewportItems = useAtom(toastAtom);
-	const cardViewportItems = useAtom(cardAtom);
-	const cardTargetsItems = useAtom(cardTargetsAtom);
+	const cardViewportItems = useAtom(cardContainerCards);
+	const cardTargetsItems = useAtom(cardTargets);
 
-	const isInputting = useAtom(inputtingAtom);
+	const isInputting = useAtom(isCardContainerIn);
 
 	return (
 		<>

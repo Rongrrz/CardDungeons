@@ -1,5 +1,6 @@
 import { useMotion, useMountEffect } from "@rbxts/pretty-react-hooks";
 import React, { useEffect } from "@rbxts/react";
+import { useComponentLifetime, useLifetimeAsync } from "@rbxts/react-lifetime-component";
 import { Selected } from "client/constants/selected";
 
 type TargetCrosshairProps = {
@@ -14,19 +15,37 @@ const transparencyGoal: Record<Selected, number> = {
 };
 
 const colorGoal: Record<Selected, Color3> = {
-	[Selected.Selected]: Color3.fromRGB(255, 100, 0),
+	[Selected.Selected]: Color3.fromRGB(255, 255, 255),
 	[Selected.NotSelected]: Color3.fromRGB(255, 255, 255),
-	[Selected.Partially]: Color3.fromRGB(255, 100, 0),
+	[Selected.Partially]: Color3.fromRGB(255, 255, 255),
 };
 
 export function TargetCrosshair(props: TargetCrosshairProps) {
-	const [color, colorMotion] = useMotion<Color3>(Color3.fromRGB(255, 150, 0));
+	const [color, colorMotion] = useMotion<Color3>(Color3.fromRGB(255, 255, 255));
 	const [transparency, transparencyMotion] = useMotion(0.75);
 	const [rotation, rotationMotion] = useMotion(0);
+	const [size, sizeMotion] = useMotion(UDim2.fromScale(8, 8));
 
 	// A continuous spinning effect
 	useMountEffect(() => {
 		rotationMotion.tween(360, { time: 20, repeatCount: -1, style: Enum.EasingStyle.Linear });
+	});
+
+	// Start extremely big and shrink to normal-size
+	useMountEffect(() => {
+		sizeMotion.spring(UDim2.fromScale(4, 4));
+	});
+
+	useLifetimeAsync(props, () => {
+		return Promise.try(async () => {
+			transparencyMotion.spring(1);
+			sizeMotion.tween(UDim2.fromScale(8, 8), {
+				time: 0.35,
+				style: Enum.EasingStyle.Linear,
+				direction: Enum.EasingDirection.InOut,
+			});
+			task.wait(0.35);
+		});
 	});
 
 	// When selection status changes, also change the aesthetics of the UI
@@ -36,7 +55,7 @@ export function TargetCrosshair(props: TargetCrosshairProps) {
 	}, [props.selected]);
 
 	return (
-		<billboardgui Size={UDim2.fromScale(4, 4)} AlwaysOnTop={true} Adornee={props.target}>
+		<billboardgui Size={size} AlwaysOnTop={true} Adornee={props.target}>
 			<imagelabel
 				AnchorPoint={new Vector2(0.5, 0.5)}
 				Size={UDim2.fromScale(1, 1)}
