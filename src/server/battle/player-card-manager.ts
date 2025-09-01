@@ -10,16 +10,15 @@ export class PlayerCardManager implements IPlayerCardManager {
 	private readonly totalCards: number;
 
 	public constructor(deck: Array<Card>) {
-		this.totalCards = deck.size();
-		this.deck = [...deck];
-
 		// Pollute the player's deck with "Empty" cards if needed
-		while (this.totalCards < 10) {
+		this.deck = [...deck];
+		while (this.deck.size() < 10) {
 			this.deck.push({
 				card: "empty",
 				quality: 0,
 			});
 		}
+		this.totalCards = deck.size();
 
 		// Shuffles the player's deck and initialize starting hand
 		knuthShuffleInPlace(deck);

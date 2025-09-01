@@ -1,19 +1,18 @@
 import React from "@rbxts/react";
 import { TargetCrosshair } from "./crosshair";
-import { CardTarget } from "client/atoms/battle-inputting";
 import { LifetimeComponent } from "@rbxts/react-lifetime-component";
+import { useAtom } from "@rbxts/react-charm";
+import { cardTargets } from "client/atoms/battle-inputting";
 
-type TargetSelectionProps = {
-	targets: Array<CardTarget>;
-};
+export function TargetSelection() {
+	const targets = useAtom(cardTargets);
 
-export function TargetSelection(props: TargetSelectionProps) {
 	return (
 		<LifetimeComponent>
-			{props.targets.map((target, index) => {
+			{targets.map((target) => {
 				return (
 					<TargetCrosshair
-						key={`${index}`}
+						key={target.model.Name}
 						target={target.model}
 						selected={target.selected}
 					/>

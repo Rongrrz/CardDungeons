@@ -1,5 +1,5 @@
 import { ReplicatedStorage } from "@rbxts/services";
-import { toastPlayer, toastPlayers } from "server/toast/toast";
+import { toastPlayers } from "server/toast/toast";
 import { PlayerCardManager } from "./player-card-manager";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
 import {

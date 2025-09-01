@@ -8,11 +8,12 @@ export const isCardContainerIn = atom<boolean>(false);
 // For whenever the player is inputting, these are the cards they can use.
 export const cardContainerCards = atom<Array<ClientCard>>([]);
 
-export const usingCardSlotAtom = atom<number>(undefined);
+export const selectedCardSlotAtom = atom<number>(undefined);
 
 // For whenever the player is selecting a target with a designated card.
 export type CardTarget = {
 	model: Model;
+	slot?: number;
 	selected: Selected;
 };
 export const cardTargets = atom<Array<CardTarget>>([]);

@@ -1,25 +1,23 @@
-import React, { ReactNode, useBinding, useEffect, useState } from "@rbxts/react";
+import React, { ReactNode, useEffect, useState } from "@rbxts/react";
 import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
-import { ClientCard } from "shared/data/cards/types";
 import { useMotion } from "@rbxts/pretty-react-hooks";
-
-type CardViewportProps = {
-	cards: Array<ClientCard>;
-	in: boolean;
-};
+import { useAtom } from "@rbxts/react-charm";
+import { cardContainerCards, isCardContainerIn } from "client/atoms/battle-inputting";
 
 const inPosition = new UDim2(0.5, 0, 1, -5);
 const outPosition = UDim2.fromScale(0.5, 1.2);
 
-export function CardViewport(props: CardViewportProps): ReactNode {
+export function CardContainer(): ReactNode {
 	const [tooltip, setTooltip] = useState<string>("");
 	const [framePos, framePosMotion] = useMotion(outPosition);
+	const hand = useAtom(cardContainerCards);
+	const isIn = useAtom(isCardContainerIn);
 
 	useEffect(() => {
-		const frameUDim2 = props.in ? inPosition : outPosition;
+		const frameUDim2 = isIn ? inPosition : outPosition;
 		framePosMotion.spring(frameUDim2);
-	}, [props.in]);
+	}, [isIn]);
 
 	return (
 		<>
@@ -51,17 +49,17 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 					SortOrder={"LayoutOrder"}
 				></uilistlayout>
 
-				{props.cards.map((c, index) => {
+				{hand.map((card, index) => {
 					return (
 						<BattleCard
 							key={`${index}`}
-							card={c.card}
-							quality={c.quality}
-							onHoverEnter={() => {
-								const text = cards[c.card].getDesc(c.quality);
+							card={card.card}
+							quality={card.quality}
+							onHoverStart={() => {
+								const text = cards[card.card].getDesc(card.quality);
 								task.delay(0, () => setTooltip(text));
 							}}
-							onHoverExit={() => setTooltip("")}
+							onHoverEnd={() => setTooltip("")}
 							cardSlot={index}
 						/>
 					);

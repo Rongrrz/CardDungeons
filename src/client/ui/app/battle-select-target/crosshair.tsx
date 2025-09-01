@@ -1,6 +1,6 @@
 import { useMotion, useMountEffect } from "@rbxts/pretty-react-hooks";
 import React, { useEffect } from "@rbxts/react";
-import { useComponentLifetime, useLifetimeAsync } from "@rbxts/react-lifetime-component";
+import { useLifetimeAsync } from "@rbxts/react-lifetime-component";
 import { Selected } from "client/constants/selected";
 
 type TargetCrosshairProps = {

@@ -15,7 +15,6 @@ type Component = {
 };
 
 function Component(props: Component) {
-	const toastViewportItems = useAtom(toastAtom);
 	useMountEffect(() => {
 		task.spawn(() => {
 			for (const index of $range(1, props.amount)) {
@@ -25,7 +24,7 @@ function Component(props: Component) {
 			}
 		});
 	});
-	return <ToastViewport toasts={toastViewportItems}></ToastViewport>;
+	return <ToastViewport />;
 }
 
 export = CreateReactStory(

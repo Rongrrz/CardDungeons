@@ -1,38 +1,28 @@
 import { useMotion } from "@rbxts/pretty-react-hooks";
-import React, { ReactNode, useEffect, useState } from "@rbxts/react";
+import React, { ReactNode, useEffect } from "@rbxts/react";
 import { useAtom } from "@rbxts/react-charm";
-import { usingCardSlotAtom } from "client/atoms/battle-inputting";
+import { selectedCardSlotAtom } from "client/atoms/battle-inputting";
 import { cards } from "shared/data/cards";
 import { ClientCard } from "shared/data/cards/types";
 
 type BattleCardProps = ClientCard & {
-	onHoverEnter: () => void;
-	onHoverExit: () => void;
+	onHoverStart: () => void;
+	onHoverEnd: () => void;
 	cardSlot: number;
 };
 
 export function BattleCard(props: BattleCardProps): ReactNode {
-	const [strokeThickness, strokeThicknessMotion] = useMotion(0);
-	const [cardTransparency, cardTransparencyMotion] = useMotion(0);
-	const [hover, setHover] = useState(false);
-	const usingCardSlot = useAtom(usingCardSlotAtom);
+	const [stroke, strokeMotion] = useMotion(0);
+	const [cardColor, cardColorMotion] = useMotion(Color3.fromRGB(255, 255, 255));
+	const selectedCardSlot = useAtom(selectedCardSlotAtom);
 
 	useEffect(() => {
-		const thickness = hover ? 1.5 : 0;
-		strokeThicknessMotion.immediate(thickness);
-	}, [hover]);
+		const using = selectedCardSlot === props.cardSlot;
+		const goal = using ? Color3.fromRGB(255, 200, 200) : Color3.fromRGB(255, 255, 255);
+		cardColorMotion.spring(goal);
+	}, [selectedCardSlot]);
 
-	useEffect(() => {
-		if (usingCardSlot === undefined) {
-			cardTransparencyMotion.spring(0);
-			return;
-		}
-		const using = usingCardSlot === props.cardSlot;
-
-		// If not using, then button becomes less transparent
-		const transparency = using ? 0 : 0.75;
-		cardTransparencyMotion.spring(transparency);
-	}, [usingCardSlot]);
+	const displayName = cards[props.card].displayName;
 
 	return (
 		<frame Transparency={1} Size={UDim2.fromScale(1, 1)}>
@@ -40,43 +30,43 @@ export function BattleCard(props: BattleCardProps): ReactNode {
 			<textbutton
 				Event={{
 					MouseEnter: () => {
-						if (usingCardSlot !== undefined) return;
-						setHover(true);
-						props.onHoverEnter();
+						strokeMotion.immediate(3);
+						props.onHoverStart();
 					},
 					MouseLeave: () => {
-						if (usingCardSlot !== undefined) return;
-						setHover(false);
-						props.onHoverExit();
+						strokeMotion.immediate(0);
+						props.onHoverEnd();
 					},
 					MouseButton1Click: () => {
-						// Unselect if already selected
-						if (usingCardSlot === props.cardSlot) {
-							usingCardSlotAtom(undefined);
-						}
-
-						// We won't continue if another card had already been selected
-						if (usingCardSlot !== undefined) return;
-
-						// We can select our card
-						usingCardSlotAtom(props.cardSlot);
+						selectedCardSlotAtom((current) =>
+							current === props.cardSlot ? undefined : props.cardSlot,
+						);
 					},
 				}}
-				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
+				BackgroundColor3={cardColor}
 				AutoButtonColor={false}
 				TextScaled={true}
-				Text={`C: ${cards[props.card].displayName}\nQ: ${props.quality}`}
+				Text={`C: ${displayName}\nQ: ${props.quality}`}
 				BorderSizePixel={0}
 				AnchorPoint={new Vector2(0, 1)}
 				Position={UDim2.fromScale(0, 1)}
 				Size={UDim2.fromScale(1, 1)}
-				Transparency={cardTransparency}
+				Transparency={0}
 			>
 				<uistroke
-					Color={Color3.fromRGB(0, 0, 0)}
-					Thickness={strokeThickness}
+					Color={Color3.fromRGB(255, 255, 255)}
+					Thickness={stroke}
 					ApplyStrokeMode={"Border"}
-				/>
+				>
+					<uigradient
+						Color={
+							new ColorSequence(
+								Color3.fromRGB(255, 100, 100),
+								Color3.fromRGB(255, 180, 0),
+							)
+						}
+					/>
+				</uistroke>
 			</textbutton>
 		</frame>
 	);

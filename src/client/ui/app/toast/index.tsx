@@ -1,14 +1,11 @@
 import React, { ReactNode } from "@rbxts/react";
-
 import { LifetimeComponent } from "@rbxts/react-lifetime-component";
 import { ToastMessage } from "./toast-message";
-import { ToastEntry } from "shared/types/toast";
+import { toastAtom } from "client/atoms/toast";
+import { useAtom } from "@rbxts/react-charm";
 
-type ToastViewportProps = {
-	toasts: Array<ToastEntry>;
-};
-
-export function ToastViewport(props: ToastViewportProps): ReactNode {
+export function ToastViewport(): ReactNode {
+	const toasts = useAtom(toastAtom);
 	return (
 		<frame
 			Transparency={1}
@@ -23,7 +20,7 @@ export function ToastViewport(props: ToastViewportProps): ReactNode {
 			></uilistlayout>
 
 			<LifetimeComponent>
-				{props.toasts.map((toast) => {
+				{toasts.map((toast) => {
 					return (
 						<ToastMessage
 							key={tostring(toast.id)}

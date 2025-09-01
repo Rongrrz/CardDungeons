@@ -1,9 +1,11 @@
 import { CardName } from "./codenames";
+import { CardTargetType } from "./target-type";
 
-export type ServerCard = {
+export type CardInfo = {
 	displayName: string;
 	manaCost: number;
 	base: number;
+	targetType: CardTargetType;
 	getDesc(quality: number): string;
 };
 
