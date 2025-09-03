@@ -1,4 +1,5 @@
-import { CardController, MoveController } from "./controller";
+import { CardController } from "./controllers/card-controller";
+import { MoveController } from "./controllers/move-controller";
 
 type BaseStats = {
 	maxHp: number;
@@ -10,6 +11,10 @@ type BaseStats = {
 
 type BattleStats = Omit<BaseStats, "hp"> & {
 	hp: number;
+};
+
+export type PlayerCombatant = Combatant & {
+	controller: CardController;
 };
 
 export class Combatant {
@@ -39,7 +44,3 @@ export class Combatant {
 		return amountHealed;
 	}
 }
-
-export type PlayerCombatant = Combatant & {
-	controller: CardController;
-};

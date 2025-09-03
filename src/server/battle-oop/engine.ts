@@ -1,11 +1,11 @@
 import { toastPlayers } from "server/toast/toast";
 import { Combatant, PlayerCombatant } from "./combatant";
-import { CardController } from "./controller";
+import { CardController } from "./controllers/card-controller";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { ReplicatedStorage } from "@rbxts/services";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
 
-export class BattleEngine {
+export class Battle {
 	// Meta
 	private participants = new Array<Player>();
 
