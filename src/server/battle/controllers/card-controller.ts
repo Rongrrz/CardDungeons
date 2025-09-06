@@ -1,5 +1,6 @@
 import { knuthShuffleInPlace } from "shared/dsa/knuthShuffle";
 import { Card } from "shared/types/cards";
+import { MoveController } from "./move-controller";
 
 export class CardController {
 	public owner: Player;
@@ -31,4 +32,12 @@ export class CardController {
 	public getHand(): Array<Card> {
 		return this.hand;
 	}
+}
+
+export function isCardController(c: unknown) {
+	return c instanceof CardController;
+}
+
+export function isMoveController(c: unknown) {
+	return c instanceof MoveController;
 }

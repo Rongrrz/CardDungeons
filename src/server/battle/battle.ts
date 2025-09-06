@@ -1,12 +1,13 @@
 import { toastPlayers } from "server/toast/toast";
 import { Combatant, PlayerCombatant } from "./combatant";
-import { CardController } from "./controllers/card-controller";
+import { CardController, isCardController } from "./controllers/card-controller";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { ReplicatedStorage } from "@rbxts/services";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
+import { BattleClient } from "shared/types/battle-oop";
 
 export class Battle {
-	// Meta
+	// Metadata
 	private participants = new Array<Player>();
 
 	private playerTeam = new Array<Combatant>();
@@ -19,9 +20,19 @@ export class Battle {
 		this.enemyTeam = enemyTeam;
 
 		// Populate participants
-		for (const p of playerTeam) {
-			if (p.controller instanceof CardController) this.participants.push(p.controller.owner);
+		for (const entity of playerTeam) {
+			if (entity.controller instanceof CardController) {
+				this.participants.push(entity.controller.owner);
+			}
 		}
+	}
+
+	private toClientRepresentation(): BattleClient {
+		return {
+			turn: this.turn,
+			players: this.playerTeam.map((e) => e.toClientRepresentation()),
+			enemies: this.enemyTeam.map((e) => e.toClientRepresentation()),
+		};
 	}
 
 	public isBattleOver(): boolean {
@@ -53,7 +64,7 @@ export class Battle {
 
 	private async takeTurn() {
 		this.turn++;
-		await this.collectInputs();
+		const { responses, pending } = await this.collectInputs();
 		await this.calculateInputs();
 		await this.replicateInputs();
 	}
@@ -69,10 +80,10 @@ export class Battle {
 			initialization: (player) => {
 				const combatant = this.playerTeam.find(
 					(c): c is PlayerCombatant =>
-						c.controller instanceof CardController && c.controller.owner === player,
+						isCardController(c.controller) && c.controller.owner === player,
 				);
 				if (combatant === undefined) return print("Player combatant not found");
-				const playerHand = combatant.controller.owner!;
+				const playerHand = combatant.controller.getHand();
 				remote.FireClient(player, playerHand);
 			},
 		});
