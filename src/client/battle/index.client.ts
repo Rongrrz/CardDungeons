@@ -25,6 +25,12 @@ let prevTarget: Instance | undefined = undefined;
 let usedCards = new Array<Card>(); // Cards used for the current player-input cycle
 let localHand = new Array<Card>(); // Cards players have for the current player-input cycle
 
+type CardInput = {
+	card: Card;
+	targetedSlot: number;
+};
+const inputs = new Array<CardInput>();
+
 subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 	if (newSlot === undefined) return cardTargets([]);
 
@@ -66,11 +72,11 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 
 // TODO: Change server-side receiver to be RemoteFunction, for invalid player input
 function handleReceivePlayerInput(hand: Array<Card>) {
-	cardContainerCards(hand); // Populate the inputting GUI
-	isCardContainerIn(true);
-
 	localHand = hand;
 	usedCards = [];
+
+	cardContainerCards(localHand); // Populate the inputting GUI
+	isCardContainerIn(true);
 
 	const mouseConnection = mouse.Move.Connect(() => {
 		// Discontinue if no card is selected
@@ -111,6 +117,38 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 				return entry;
 			});
 			return changed ? updated : prev;
+		});
+	});
+
+	const ClickConnection = mouse.Button1Up.Connect(() => {
+		// Discontinue if no card is selected
+		const cardSlot = peek(selectedCardSlotAtom);
+		if (cardSlot === undefined) return;
+
+		const mouseTarget = mouse.Target;
+		if (mouseTarget === undefined) return;
+
+		const targetModels = peek(cardTargets);
+		const hoveringValidTarget = targetModels.find((m) => {
+			return mouseTarget.IsDescendantOf(m.model);
+		})?.model;
+
+		if (hoveringValidTarget === undefined) return;
+		const targets = peek(cardTargets);
+		targets.forEach((t) => {
+			if (hoveringValidTarget === t.model) {
+				const cardSlot = peek(selectedCardSlotAtom)!;
+				const card = localHand.remove(cardSlot)!;
+				usedCards.push(card);
+				inputs.push({
+					card: card,
+					targetedSlot: t.slot,
+				});
+
+				selectedCardSlotAtom(undefined);
+				cardContainerCards([...localHand]); // TODO: Refactor to use Immut
+				return;
+			}
 		});
 	});
 

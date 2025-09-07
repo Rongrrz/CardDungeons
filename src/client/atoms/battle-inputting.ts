@@ -13,7 +13,7 @@ export const selectedCardSlotAtom = atom<number>(undefined);
 // For whenever the player is selecting a target with a designated card.
 export type CardTarget = {
 	model: Model;
-	slot?: number;
+	slot: number;
 	selected: Selected;
 };
 export const cardTargets = atom<Array<CardTarget>>([]);
