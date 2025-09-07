@@ -1,4 +1,6 @@
-import { PlayerData } from "shared/types/battle";
+import { Players } from "@rbxts/services";
+import { Combatant } from "server/battle/combatant";
+import { CardController } from "server/battle/controllers/card-controller";
 import { Card } from "shared/types/cards";
 
 const mockDeck = new Array<Card>();
@@ -15,15 +17,13 @@ mockDeck.push({
 
 mockDeck.push({
 	card: "enhance",
-	quality: 888,
+	quality: 88,
 });
 
-export const mockThetaEngineer: PlayerData = {
-	id: 8306213857,
-	stats: {
-		hp: 100,
-		attack: 15,
-		defense: 5,
-	},
-	deck: mockDeck,
-};
+const ThetaEngineer = Players.WaitForChild("ThetaEngineer") as unknown as Player;
+
+export const mockThetaEngineer: Combatant = new Combatant(
+	1,
+	{ attack: 15, defense: 5, maxHp: 100, speed: 15 },
+	new CardController(ThetaEngineer, mockDeck),
+);

@@ -1,55 +1,33 @@
-import { EnemyName } from "shared/data/enemies/codenames";
-import { EnemyStats } from "shared/data/enemies/types";
-import { Queue } from "shared/dsa/queue";
 import { Card } from "./cards";
-import { IPlayerCardManager } from "shared/interfaces/player-card-manager";
+import { ModelName, StrictUnion } from "./utils";
 
-export type BattleState = "start" | "input" | "calculate" | "replicate" | "ended";
-
-export type BattlePlayerStats = {
-	hp: number;
+export type BaseStats = {
+	maxHp: number;
+	hp?: number;
 	attack: number;
 	defense: number;
+	speed: number;
 };
 
-export type BattlePlayer = {
-	stats: BattlePlayerStats;
-	cardManager: IPlayerCardManager;
+export type BattleStats = Omit<BaseStats, "hp"> & { hp: number };
+
+export type CombatantClientShared = {
+	stats: BattleStats;
+	model: ModelName;
+	slot: number;
 };
 
-export type PlayerData = {
-	id: number;
-	stats: BattlePlayerStats;
-	deck: Array<Card>;
+type CombatantClientEntity = CombatantClientShared & {};
+
+type CombatantClientPlayer = CombatantClientShared & {
+	hand: Array<Card>;
+	ownerUserId: number;
 };
 
-export type BattleEnemy = {
-	name: EnemyName;
-	stats: EnemyStats;
-};
+export type CombatantClient = StrictUnion<CombatantClientEntity, CombatantClientPlayer>;
 
-type ContinuousEnemies = {
-	type: "continuous";
-	maxConcurrentEnemy: number;
-	enemies: Queue<BattleEnemy>;
-};
-
-type EnemyWaves = {
-	type: "waves";
-	enemies: Queue<Array<BattleEnemy>>;
-};
-export type EnemyData = ContinuousEnemies | EnemyWaves;
-
-export type BattleSetUpData = {
-	playerData: Array<PlayerData>;
-	enemyData: EnemyData;
-};
-
-export type Battle = {
-	id: number;
+export type BattleClient = {
 	turn: number;
-	state: BattleState;
-	players: Map<number, BattlePlayer>;
-	enemies: Array<BattleEnemy>;
-	enemyData: EnemyData;
+	players: Array<CombatantClient>;
+	enemies: Array<CombatantClient>;
 };

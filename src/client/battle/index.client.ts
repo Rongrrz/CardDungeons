@@ -1,4 +1,5 @@
 import { peek, subscribe } from "@rbxts/charm";
+import { produce } from "@rbxts/immut";
 import { Players, ReplicatedStorage, Workspace } from "@rbxts/services";
 import {
 	cardContainerCards,
@@ -10,16 +11,13 @@ import { playerModel } from "client/constants/battle";
 import { Selected } from "client/constants/selected";
 import { cards } from "shared/data/cards";
 import { CardTargetType, isTargetingAll } from "shared/data/cards/target-type";
-import { enemyModels } from "shared/data/enemies/models";
-import { Battle } from "shared/types/battle";
+import { remotes } from "shared/remotes/remo";
+import { BattleClient } from "shared/types/battle";
 import { Card } from "shared/types/cards";
-
-const receivePlayerInput = ReplicatedStorage.Remotes.ReceivePlayerInput;
-const initializeBattleVisuals = ReplicatedStorage.Remotes.InitializeBattleVisuals;
 
 const mouse = Players.LocalPlayer.GetMouse();
 const field = {
-	players: new Array<{ model: Model; id: string }>(),
+	players: new Array<{ model: Model; slot: number; ownerUserId?: number }>(),
 	enemies: new Array<{ model: Model; slot: number }>(),
 };
 let prevTarget: Instance | undefined = undefined;
@@ -39,8 +37,8 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 			cardTargets([]);
 			break;
 		case CardTargetType.User: {
-			const userModel = field.players.find((player) => {
-				return player.id === tostring(Players.LocalPlayer.UserId);
+			const userModel = field.players.find((entity) => {
+				return entity.ownerUserId === Players.LocalPlayer.UserId;
 			});
 			cardTargets([{ ...userModel!, selected: Selected.NotSelected }]);
 			break;
@@ -48,8 +46,8 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 		case CardTargetType.AllEnemyTeam:
 		case CardTargetType.SingleEnemy: {
 			cardTargets(
-				field.enemies.map((e) => {
-					return { ...e, selected: Selected.NotSelected };
+				field.enemies.map((entity) => {
+					return { ...entity, selected: Selected.NotSelected };
 				}),
 			);
 			break;
@@ -57,8 +55,8 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 		case CardTargetType.AllUserTeam:
 		case CardTargetType.SingleUserTeam: {
 			cardTargets(
-				field.players.map((p) => {
-					return { ...p, selected: Selected.NotSelected };
+				field.players.map((entity) => {
+					return { ...entity, selected: Selected.NotSelected };
 				}),
 			);
 			break;
@@ -97,16 +95,18 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 			let changed = false;
 			const updated = prev.map((entry) => {
 				// TODO: Refurbish this piece of junk
-				const isSelected = hoveringValidTarget
+				const newIsSelected = hoveringValidTarget
 					? isTargetingAll(cardInfo.targetType)
 						? Selected.Selected
 						: hoveringValidTarget === entry.model
 							? Selected.Selected
 							: Selected.NotSelected
 					: Selected.NotSelected;
-				if (entry.selected !== isSelected) {
+				if (entry.selected !== newIsSelected) {
 					changed = true;
-					return { ...entry, selected: isSelected };
+					return produce(entry, (draft) => {
+						draft.selected = newIsSelected;
+					});
 				}
 				return entry;
 			});
@@ -118,40 +118,40 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 	// inputtingAtom(false);
 }
 
-function handleInitializeBattleVisuals(battle: Omit<Battle, "enemyData">) {
-	battle.enemies.forEach((enemy, index) => {
-		const model = enemyModels[enemy.name] ?? enemyModels.greenSlime;
+function handleInitializeBattleVisuals(battle: BattleClient) {
+	battle.enemies.forEach((entity) => {
+		const model = ReplicatedStorage.Models[entity.model];
 		const clone = model.Clone();
-		clone.Name = `${index + 1}`;
-		const node = Workspace.Battlefield.Enemy.FindFirstChild(index + 1) as unknown as Part;
 
+		clone.Name = tostring(entity.slot);
+		const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
 		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
 		clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
 		clone.Parent = Workspace.Temporary.BattleEnemies;
 
 		field.enemies.push({
 			model: clone,
-			slot: index,
+			slot: entity.slot,
 		});
 	});
 
-	let index = 0;
-	battle.players.forEach((player, id) => {
+	battle.players.forEach((entity) => {
 		const clone = playerModel.Clone();
-		clone.Name = tostring(id);
-		const node = Workspace.Battlefield.Player.FindFirstChild(++index) as unknown as Part;
+		clone.Name = tostring(entity.slot);
 
+		const node = Workspace.Battlefield.Player.FindFirstChild(entity.slot) as unknown as Part;
 		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
 		clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));
 		clone.Parent = Workspace.Temporary.BattlePlayers;
 
 		field.players.push({
 			model: clone,
-			id: tostring(id),
+			slot: entity.slot,
+			ownerUserId: entity.ownerUserId,
 		});
 	});
-	initializeBattleVisuals.FireServer(); // Tells the player that we have finished initializing
+	remotes.ReceiveBattleInitialized.fire(); // Tells the player that we have finished initializing
 }
 
-receivePlayerInput.OnClientEvent.Connect(handleReceivePlayerInput);
-initializeBattleVisuals.OnClientEvent.Connect(handleInitializeBattleVisuals);
+remotes.SendBattleSnapshot.connect(handleInitializeBattleVisuals);
+remotes.SendReadyForPlayerInput.connect(handleReceivePlayerInput);

@@ -4,7 +4,8 @@ import { CardController, isCardController } from "./controllers/card-controller"
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { ReplicatedStorage } from "@rbxts/services";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattleClient } from "shared/types/battle-oop";
+import { BattleClient } from "shared/types/battle";
+import { remotes } from "shared/remotes/remo";
 
 export class Battle {
 	// Metadata
@@ -53,12 +54,13 @@ export class Battle {
 
 	private processInitialize() {
 		toastPlayers(this.participants, "Initializing battle...");
-		const remote = ReplicatedStorage.Remotes.InitializeBattleVisuals;
+		const initializer = remotes.SendBattleSnapshot;
+		const receiver = remotes.ReceiveBattleInitialized;
 		return collectPlayerResponses({
 			players: this.participants,
-			collectionEvent: remote,
+			collectionEvent: receiver,
 			timeout: BF_INIT_TIME,
-			initialization: (player) => remote.FireClient(player, this),
+			initialization: (player) => initializer.fire(player, this.toClientRepresentation()),
 		});
 	}
 
@@ -72,10 +74,11 @@ export class Battle {
 	// TODO: This function should also process entity and enemy inputs
 	private collectInputs() {
 		toastPlayers(this.participants, "Collecting inputs...");
-		const remote = ReplicatedStorage.Remotes.ReceivePlayerInput;
+		const initializer = remotes.SendReadyForPlayerInput;
+		const receiver = remotes.ReceivePlayerInput;
 		return collectPlayerResponses({
 			players: this.participants,
-			collectionEvent: remote,
+			collectionEvent: receiver,
 			timeout: PLAYER_TURN_TIME,
 			initialization: (player) => {
 				const combatant = this.playerTeam.find(
@@ -84,7 +87,7 @@ export class Battle {
 				);
 				if (combatant === undefined) return print("Player combatant not found");
 				const playerHand = combatant.controller.getHand();
-				remote.FireClient(player, playerHand);
+				initializer.fire(player, playerHand);
 			},
 		});
 	}

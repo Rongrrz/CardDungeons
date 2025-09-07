@@ -2,14 +2,20 @@ import { produce } from "@rbxts/immut";
 import { CardController, isCardController } from "./controllers/card-controller";
 import { MoveController } from "./controllers/move-controller";
 import { ReplicatedStorage } from "@rbxts/services";
-import { BaseStats, BattleStats, CombatantClient } from "shared/types/battle-oop";
+import {
+	BaseStats,
+	BattleStats,
+	CombatantClient,
+	CombatantClientShared,
+} from "shared/types/battle";
+import { ModelName } from "shared/types/utils";
 
 export type PlayerCombatant = Combatant & {
 	controller: CardController;
 };
 
 export class Combatant {
-	public readonly model: Model;
+	public readonly model: ModelName;
 	private stats: BattleStats;
 	public isAlive: boolean;
 	public controller: CardController | MoveController;
@@ -23,16 +29,24 @@ export class Combatant {
 		this.isAlive = this.stats.hp > 0;
 		this.controller = controller;
 		this.slot = slot;
-		this.model = ReplicatedStorage.Models.BlueSlime;
+		this.model = "BlueSlime";
 	}
 
+	// TODO: Could look prettier
 	public toClientRepresentation(): CombatantClient {
-		const hand = isCardController(this.controller) ? this.controller.getHand() : undefined;
-		return {
-			// Investigate why i dont fully need owneruserid
+		const shared: CombatantClientShared = {
 			stats: this.stats,
-			hand: hand,
+			model: this.model,
+			slot: this.slot,
 		};
+		if (isCardController(this.controller)) {
+			return {
+				...shared,
+				hand: this.controller.getHand(),
+				ownerUserId: this.controller.owner.UserId,
+			};
+		}
+		return { ...shared };
 	}
 
 	// Returns the actual amount of damage taken

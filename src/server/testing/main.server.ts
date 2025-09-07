@@ -1,10 +1,9 @@
-import { createBattle } from "server/battle/engine";
+task.wait(3);
+
+import { Battle } from "server/battle/battle";
 import { mockEnemyData } from "./mock-enemy";
 import { mockThetaEngineer } from "./mock-player";
 
 // Create a battle
-task.wait(3);
-createBattle({
-	enemyData: mockEnemyData,
-	playerData: [mockThetaEngineer],
-});
+const battle = new Battle([mockThetaEngineer], mockEnemyData);
+battle.startBattle();
