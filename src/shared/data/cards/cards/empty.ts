@@ -1,5 +1,5 @@
+import { CardInfo } from "shared/types/cards";
 import { CardTargetType } from "../target-type";
-import { CardInfo } from "../types";
 
 export const empty: CardInfo = {
 	displayName: "Empty",

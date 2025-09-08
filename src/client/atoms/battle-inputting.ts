@@ -1,12 +1,9 @@
 import { atom } from "@rbxts/charm";
 import { Selected } from "client/constants/selected";
-import { ClientCard } from "shared/data/cards/types";
+import { Card } from "shared/types/cards";
 
 // For whenever the player is inputting, this is if the card container should be in or not.
 export const isCardContainerIn = atom<boolean>(false);
-
-// For whenever the player is inputting, these are the cards they can use.
-export const cardContainerCards = atom<Array<ClientCard>>([]);
 
 export const selectedCardSlotAtom = atom<number>(undefined);
 

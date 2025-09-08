@@ -2,8 +2,9 @@ import { CreateReactStory, Number } from "@rbxts/ui-labs";
 import React from "@rbxts/react";
 import ReactRoblox from "@rbxts/react-roblox";
 import { CardContainer } from "client/ui/app/battle-card";
-import { ClientCard } from "shared/data/cards/types";
-import { cardContainerCards, isCardContainerIn } from "client/atoms/battle-inputting";
+import { isCardContainerIn } from "client/atoms/battle-inputting";
+import { Card } from "shared/types/cards";
+import { localHand } from "client/battle";
 
 const controls = {
 	amount: Number(1, 1, 10),
@@ -14,7 +15,7 @@ type Component = {
 };
 
 function Component(props: Component) {
-	const cardTable = new Array<ClientCard>();
+	const cardTable = new Array<Card>();
 
 	for (const _ of $range(1, props.amount)) {
 		cardTable.push({
@@ -22,7 +23,7 @@ function Component(props: Component) {
 			quality: math.random(80, 100),
 		});
 	}
-	cardContainerCards(cardTable);
+	localHand(cardTable);
 	isCardContainerIn(true);
 	return <CardContainer />;
 }

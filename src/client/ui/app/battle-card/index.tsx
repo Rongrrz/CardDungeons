@@ -3,7 +3,8 @@ import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
 import { useMotion } from "@rbxts/pretty-react-hooks";
 import { useAtom } from "@rbxts/react-charm";
-import { cardContainerCards, isCardContainerIn } from "client/atoms/battle-inputting";
+import { isCardContainerIn } from "client/atoms/battle-inputting";
+import { localHand } from "client/battle";
 
 const inPosition = new UDim2(0.5, 0, 1, -5);
 const outPosition = UDim2.fromScale(0.5, 1.2);
@@ -11,7 +12,7 @@ const outPosition = UDim2.fromScale(0.5, 1.2);
 export function CardContainer(): ReactNode {
 	const [tooltip, setTooltip] = useState<string>("");
 	const [framePos, framePosMotion] = useMotion(outPosition);
-	const hand = useAtom(cardContainerCards);
+	const hand = useAtom(localHand);
 	const isIn = useAtom(isCardContainerIn);
 
 	useEffect(() => {

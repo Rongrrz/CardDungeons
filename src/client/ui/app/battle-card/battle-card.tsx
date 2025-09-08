@@ -3,9 +3,9 @@ import React, { ReactNode, useEffect } from "@rbxts/react";
 import { useAtom } from "@rbxts/react-charm";
 import { selectedCardSlotAtom } from "client/atoms/battle-inputting";
 import { cards } from "shared/data/cards";
-import { ClientCard } from "shared/data/cards/types";
+import { Card } from "shared/types/cards";
 
-type BattleCardProps = ClientCard & {
+type BattleCardProps = Card & {
 	onHoverStart: () => void;
 	onHoverEnd: () => void;
 	cardSlot: number;

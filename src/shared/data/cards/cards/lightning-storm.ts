@@ -1,6 +1,6 @@
 import { calculateMultiplier } from "../utils";
-import { CardInfo } from "../types";
 import { CardTargetType } from "../target-type";
+import { CardInfo } from "shared/types/cards";
 
 export const lightningStorm: CardInfo = {
 	displayName: "Lightning Storm",
