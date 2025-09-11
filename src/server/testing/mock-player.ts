@@ -1,20 +1,29 @@
-import { Card } from "server/battle/card-manager";
-import { PlayerData } from "server/battle/engine";
+import { Players } from "@rbxts/services";
+import { Combatant } from "server/battle/combatant";
+import { CardController } from "server/battle/controllers/card-controller";
+import { Card } from "shared/types/cards";
 
 const mockDeck = new Array<Card>();
-for (const _ of $range(1, 15)) {
+for (const _ of $range(1, 1)) {
 	mockDeck.push({
 		card: "fireball",
 		quality: math.random(80, 100),
 	});
 }
+mockDeck.push({
+	card: "lightningStorm",
+	quality: math.random(80, 100),
+});
 
-export const mockThetaEngineer: PlayerData = {
-	id: 8306213857,
-	stats: {
-		hp: 100,
-		attack: 15,
-		defense: 5,
-	},
-	deck: mockDeck,
-};
+mockDeck.push({
+	card: "enhance",
+	quality: 88,
+});
+
+const ThetaEngineer = Players.WaitForChild("ThetaEngineer") as unknown as Player;
+
+export const mockThetaEngineer: Combatant = new Combatant(
+	1,
+	{ attack: 15, defense: 5, maxHp: 100, speed: 15 },
+	new CardController(ThetaEngineer, mockDeck),
+);

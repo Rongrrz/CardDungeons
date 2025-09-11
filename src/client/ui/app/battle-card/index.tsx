@@ -1,33 +1,81 @@
-import React, { ReactNode, useBinding } from "@rbxts/react";
+import React, { ReactNode, useEffect, useState } from "@rbxts/react";
 import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
-import { ClientCard } from "shared/data/cards/types";
+import { useMotion } from "@rbxts/pretty-react-hooks";
+import { useAtom } from "@rbxts/react-charm";
+import { isCardContainerIn } from "client/atoms/battle-inputting";
+import { localHand } from "client/battle";
 
-type CardViewportProps = {
-	cards: Array<ClientCard>;
-};
+const inPosition = new UDim2(0.5, 0, 1, -5);
+const outPosition = UDim2.fromScale(0.5, 1.2);
 
-export function CardViewport(props: CardViewportProps): ReactNode {
-	const [tooltip, setTooltip] = useBinding<string>("");
+export function CardContainer(): ReactNode {
+	const [tooltip, setTooltip] = useState<string>("");
+	const [framePos, framePosMotion] = useMotion(outPosition);
+	const hand = useAtom(localHand);
+	const isIn = useAtom(isCardContainerIn);
 
+	useEffect(() => {
+		const frameUDim2 = isIn ? inPosition : outPosition;
+		framePosMotion.spring(frameUDim2);
+	}, [isIn]);
+
+	// TODO: Make tooltip follow mouse, and original tooltip position for submit and undo
+	// TODO: Make GUI to show input order
 	return (
 		<>
 			<textlabel
 				AnchorPoint={new Vector2(0.5, 1)}
-				Size={UDim2.fromScale(0.5, 0.1)}
+				Size={UDim2.fromScale(0.5, 0.06)}
 				Position={new UDim2(0.5, 0, 0.8, -15)}
-				Text={tooltip.getValue()}
+				TextColor3={Color3.fromRGB(255, 255, 255)}
+				Text={tooltip}
+				TextScaled={true}
 				TextWrapped={true}
 				TextYAlignment={"Bottom"}
 				BorderSizePixel={0}
 				BackgroundTransparency={1}
 			/>
 
+			<textbutton
+				BackgroundColor3={Color3.fromRGB(150, 255, 255)}
+				Size={UDim2.fromScale(0.1, 0.075)}
+				Transparency={0}
+				Position={new UDim2(0.2, -5, 0.8625, 2)}
+				BorderSizePixel={0}
+				AnchorPoint={new Vector2(0.5, 1)}
+				Text={"Submit"}
+			>
+				<uistroke
+					ApplyStrokeMode={"Border"}
+					Thickness={2}
+					Color={Color3.fromRGB(255, 255, 255)}
+				/>
+			</textbutton>
+
+			<textbutton
+				BackgroundColor3={Color3.fromRGB(150, 255, 255)}
+				Size={UDim2.fromScale(0.1, 0.075)}
+				Transparency={0}
+				Position={new UDim2(0.2, -5, 1, -7)}
+				BorderSizePixel={0}
+				AnchorPoint={new Vector2(0.5, 1)}
+				Text={"Undo"}
+			>
+				<uistroke
+					ApplyStrokeMode={"Border"}
+					Thickness={2}
+					Color={Color3.fromRGB(255, 255, 255)}
+				/>
+			</textbutton>
+
 			<frame
-				Transparency={0.9}
+				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
+				Transparency={0.5}
+				BorderSizePixel={0}
 				Size={UDim2.fromScale(0.5, 0.2)}
 				AnchorPoint={new Vector2(0.5, 1)}
-				Position={new UDim2(0.5, 0, 1, -5)}
+				Position={framePos}
 			>
 				<uilistlayout
 					Padding={new UDim(0, 5)}
@@ -36,17 +84,18 @@ export function CardViewport(props: CardViewportProps): ReactNode {
 					SortOrder={"LayoutOrder"}
 				></uilistlayout>
 
-				{props.cards.map((c, index) => {
+				{hand.map((card, index) => {
 					return (
 						<BattleCard
 							key={`${index}`}
-							card={c.card}
-							quality={c.quality}
-							onHoverEnter={() => {
-								const text = cards[c.card].getDesc(c.quality);
+							card={card.card}
+							quality={card.quality}
+							onHoverStart={() => {
+								const text = cards[card.card].getDesc(card.quality);
 								task.delay(0, () => setTooltip(text));
 							}}
-							onHoverExit={() => setTooltip("")}
+							onHoverEnd={() => setTooltip("")}
+							cardSlot={index}
 						/>
 					);
 				})}

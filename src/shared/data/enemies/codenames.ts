@@ -1,3 +1,3 @@
-const enemyNames = ["greenSlime", "blueSlime"] as const;
+export const enemyCodenames = ["greenSlime", "blueSlime"] as const;
 
-export type EnemyName = (typeof enemyNames)[number];
+export type EnemyName = (typeof enemyCodenames)[number];

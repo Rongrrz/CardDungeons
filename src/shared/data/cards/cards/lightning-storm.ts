@@ -1,7 +1,8 @@
 import { calculateMultiplier } from "../utils";
-import { ServerCard } from "../types";
+import { CardTargetType } from "../target-type";
+import { CardInfo } from "shared/types/cards";
 
-export const lightningStorm: ServerCard = {
+export const lightningStorm: CardInfo = {
 	displayName: "Lightning Storm",
 	manaCost: 30,
 	base: 200,
@@ -9,4 +10,5 @@ export const lightningStorm: ServerCard = {
 		const calculated = calculateMultiplier(this.base, quality);
 		return `Summon a lightning storm, dealing ${calculated}% of attack as damage to a all enemies.`;
 	},
+	targetType: CardTargetType.AllEnemyTeam,
 };

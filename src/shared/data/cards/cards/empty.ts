@@ -1,10 +1,12 @@
-import { ServerCard } from "../types";
+import { CardInfo } from "shared/types/cards";
+import { CardTargetType } from "../target-type";
 
-export const empty: ServerCard = {
+export const empty: CardInfo = {
 	displayName: "Empty",
 	manaCost: 5,
 	base: 0,
 	getDesc() {
 		return `A card to clog up your hand... :)`;
 	},
+	targetType: CardTargetType.None,
 };
