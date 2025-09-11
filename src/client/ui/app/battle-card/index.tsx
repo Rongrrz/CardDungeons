@@ -3,8 +3,7 @@ import { cards } from "shared/data/cards";
 import { BattleCard } from "./battle-card";
 import { useMotion } from "@rbxts/pretty-react-hooks";
 import { useAtom } from "@rbxts/react-charm";
-import { isCardContainerIn } from "client/atoms/battle-inputting";
-import { localHand } from "client/battle";
+import { isCardContainerIn, playerHand } from "client/atoms/battle-inputting";
 
 const inPosition = new UDim2(0.5, 0, 1, -5);
 const outPosition = UDim2.fromScale(0.5, 1.2);
@@ -12,7 +11,7 @@ const outPosition = UDim2.fromScale(0.5, 1.2);
 export function CardContainer(): ReactNode {
 	const [tooltip, setTooltip] = useState<string>("");
 	const [framePos, framePosMotion] = useMotion(outPosition);
-	const hand = useAtom(localHand);
+	const hand = useAtom(playerHand);
 	const isIn = useAtom(isCardContainerIn);
 
 	useEffect(() => {
@@ -39,35 +38,13 @@ export function CardContainer(): ReactNode {
 
 			<textbutton
 				BackgroundColor3={Color3.fromRGB(150, 255, 255)}
-				Size={UDim2.fromScale(0.1, 0.075)}
+				Size={UDim2.fromScale(0.1, 0.05)}
 				Transparency={0}
 				Position={new UDim2(0.2, -5, 0.8625, 2)}
 				BorderSizePixel={0}
 				AnchorPoint={new Vector2(0.5, 1)}
-				Text={"Submit"}
-			>
-				<uistroke
-					ApplyStrokeMode={"Border"}
-					Thickness={2}
-					Color={Color3.fromRGB(255, 255, 255)}
-				/>
-			</textbutton>
-
-			<textbutton
-				BackgroundColor3={Color3.fromRGB(150, 255, 255)}
-				Size={UDim2.fromScale(0.1, 0.075)}
-				Transparency={0}
-				Position={new UDim2(0.2, -5, 1, -7)}
-				BorderSizePixel={0}
-				AnchorPoint={new Vector2(0.5, 1)}
-				Text={"Undo"}
-			>
-				<uistroke
-					ApplyStrokeMode={"Border"}
-					Thickness={2}
-					Color={Color3.fromRGB(255, 255, 255)}
-				/>
-			</textbutton>
+				Text={"End Turn"}
+			/>
 
 			<frame
 				BackgroundColor3={Color3.fromRGB(255, 255, 255)}
