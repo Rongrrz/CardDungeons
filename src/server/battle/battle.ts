@@ -1,8 +1,7 @@
 import { toastPlayers } from "server/toast/toast";
-import { Combatant, PlayerCombatant } from "./combatant";
-import { CardController, isCardController } from "./controllers/card-controller";
+import { Combatant, isPlayerCombatant, PlayerCombatant } from "./combatant";
+import { CardController } from "./controllers/card-controller";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
-import { ReplicatedStorage } from "@rbxts/services";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
 import { BattleClient } from "shared/types/battle";
 import { remotes } from "shared/remotes/remo";
@@ -66,13 +65,29 @@ export class Battle {
 
 	private async takeTurn() {
 		this.turn++;
-		const { responses, pending } = await this.collectInputs();
+		// Player inputs
+		await this.processPlayerInputs();
+
+		// Enemy & player team entity inputs
+		await this.processEntityInputs();
 		await this.calculateInputs();
 		await this.replicateInputs();
 	}
 
+	private async processPlayerInputs() {
+		const players = this.playerTeam.filter(isPlayerCombatant);
+		while (players.size() > 0) {
+			const { responses, pending } = await this.collectPlayersCardInput(players);
+			// If response is end turn then remove
+			// Generate inputs for any pending
+			// Finish when everyone is finished
+		}
+	}
+
+	private async processEntityInputs() {}
+
 	// TODO: This function should also process entity and enemy inputs
-	private collectInputs() {
+	private collectPlayersCardInput(players: PlayerCombatant[]) {
 		toastPlayers(this.participants, "Collecting inputs...");
 		const initializer = remotes.SendReadyForPlayerInput;
 		const receiver = remotes.ReceivePlayerInput;
@@ -81,9 +96,11 @@ export class Battle {
 			collectionEvent: receiver,
 			timeout: PLAYER_TURN_TIME,
 			initialization: (player) => {
+				// TODO: Dependency inject players instead of this.playerTeam
 				const combatant = this.playerTeam.find(
+					// TODO: This line is kinda horrible
 					(c): c is PlayerCombatant =>
-						isCardController(c.controller) && c.controller.owner === player,
+						isPlayerCombatant(c) && c.controller.owner === player,
 				);
 				if (combatant === undefined) return print("Player combatant not found");
 				const playerHand = combatant.controller.getHand();
