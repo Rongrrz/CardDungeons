@@ -1,7 +1,6 @@
 import { produce } from "@rbxts/immut";
-import { CardController, isCardController } from "./controllers/card-controller";
+import { CardController } from "./controllers/card-controller";
 import { MoveController } from "./controllers/move-controller";
-import { ReplicatedStorage } from "@rbxts/services";
 import {
 	BaseStats,
 	BattleStats,
@@ -39,7 +38,7 @@ export class Combatant {
 			model: this.model,
 			slot: this.slot,
 		};
-		if (isCardController(this.controller)) {
+		if (isPlayerCombatant(this)) {
 			return {
 				...shared,
 				hand: this.controller.getHand(),
@@ -62,4 +61,8 @@ export class Combatant {
 		this.stats.hp += amountHealed;
 		return amountHealed;
 	}
+}
+
+export function isPlayerCombatant(c: Combatant): c is PlayerCombatant {
+	return c.controller instanceof CardController;
 }
