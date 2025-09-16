@@ -64,7 +64,7 @@ export function CardContainer(): ReactNode {
 				{hand.map((card, index) => {
 					return (
 						<BattleCard
-							key={`${index}`}
+							key={`${card.card}-${card.quality}`}
 							card={card.card}
 							quality={card.quality}
 							onHoverStart={() => {

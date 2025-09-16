@@ -151,7 +151,7 @@ function handleInitializeBattleVisuals(battle: BattleClient) {
 		const model = ReplicatedStorage.Models[entity.model];
 		const clone = model.Clone();
 
-		clone.Name = tostring(entity.slot);
+		clone.Name = `e-${entity.slot}`;
 		const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
 		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
 		clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
@@ -165,7 +165,7 @@ function handleInitializeBattleVisuals(battle: BattleClient) {
 
 	battle.players.forEach((entity) => {
 		const clone = playerModel.Clone();
-		clone.Name = tostring(entity.slot);
+		clone.Name = `p-${entity.slot}`;
 
 		const node = Workspace.Battlefield.Player.FindFirstChild(entity.slot) as unknown as Part;
 		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
