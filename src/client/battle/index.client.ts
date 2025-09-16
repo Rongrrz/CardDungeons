@@ -65,12 +65,16 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 	}
 });
 
+function cleanPlayerInput() {
+	trove.clean();
+	selectedCardSlotAtom(undefined);
+	isCardContainerIn(false);
+}
+
 // TODO: Change server-side receiver to be RemoteFunction, for invalid player input
 function handleReceivePlayerInput(hand: Array<Card>) {
-	selectedCardSlotAtom(undefined);
-	trove.clean();
+	cleanPlayerInput();
 	playerHand(hand);
-
 	isCardContainerIn(true);
 
 	const mouseConnection = mouse.Move.Connect(() => {
@@ -133,20 +137,19 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 		for (const t of targets) {
 			if (hoveringValidTarget !== t.model) continue;
 			const card = playerHand()[currentlySelectedCard];
-			remotes.ReceivePlayerInput.fire({ cardUsed: card, targetSlot: t.slot });
-			// TODO: Extract a cleaning helper-function
-			trove.clean();
-			isCardContainerIn(false);
-			selectedCardSlotAtom(undefined);
+			remotes.ReceivePlayerInput.fire({
+				kind: "PlayCard",
+				cardUsed: card,
+				targetSlot: t.slot,
+			});
+			cleanPlayerInput();
 			return;
 		}
 	});
 
 	const endTurnConnection = ReplicatedStorage.Remotes.EndTurnClicked.Event.Connect(() => {
-		remotes.ReceivePlayerInput.fire({});
-		trove.clean();
-		selectedCardSlotAtom(undefined);
-		isCardContainerIn(false);
+		remotes.ReceivePlayerInput.fire({ kind: "EndTurn" });
+		cleanPlayerInput();
 	});
 
 	trove.add(mouseConnection);

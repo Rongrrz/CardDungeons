@@ -31,3 +31,15 @@ export type BattleClient = {
 	players: Array<CombatantClient>;
 	enemies: Array<CombatantClient>;
 };
+
+type PlayCard = {
+	kind: "PlayCard";
+	cardUsed: Card;
+	targetSlot: number;
+};
+
+type EndTurn = {
+	kind: "EndTurn";
+};
+
+export type CardInput = StrictUnion<PlayCard, EndTurn>;

@@ -3,20 +3,9 @@ import { Combatant, isOwnerByPlayer, isPlayerCombatant, PlayerCombatant } from "
 import { CardController } from "./controllers/card-controller";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattleClient } from "shared/types/battle";
+import { BattleClient, CardInput } from "shared/types/battle";
 import { isCardCheck, remotes } from "shared/remotes/remo";
-import { Card } from "shared/types/cards";
 import { t } from "@rbxts/t";
-import { EmptyObject } from "shared/types/utils";
-
-type CardInput = {
-	cardUsed: Card;
-	targetSlot: number;
-};
-
-function isEmptyInput(input: CardInput | EmptyObject): input is EmptyObject {
-	return input.cardUsed === undefined;
-}
 
 export class Battle {
 	// Metadata
@@ -91,19 +80,22 @@ export class Battle {
 	}
 
 	private async processPlayerInputs() {
-		const players = this.playerTeam.filter(isPlayerCombatant);
-		while (players.size() > 0) {
-			const { responses, pending } = await this.collectPlayersCardInput(players);
+		const playerCombatants = this.playerTeam.filter(isPlayerCombatant);
+		while (playerCombatants.size() > 0) {
+			const { responses, pending } = await this.collectPlayersCardInput(
+				playerCombatants.map((c) => c.controller.owner),
+			);
+
 			// Generate inputs for any pending
-			for (const player of pending) {
-				responses.set(player, {});
-			}
+			for (const player of pending) responses.set(player, { kind: "EndTurn" });
 
 			// If response is end turn then remove
 			const inputsToProcess = new Array<{ player: Player; input: CardInput }>();
 			for (const [player, input] of responses) {
-				if (isEmptyInput(input)) {
-					players.remove(players.findIndex((c) => c.controller.owner === player));
+				if (input.kind === "EndTurn") {
+					playerCombatants.remove(
+						playerCombatants.findIndex((c) => c.controller.owner === player),
+					);
 					continue;
 				}
 				inputsToProcess.push({ player: player, input: input });
@@ -117,21 +109,24 @@ export class Battle {
 
 	private async processEntityInputs() {}
 
-	private collectPlayersCardInput(players: PlayerCombatant[]) {
-		toastPlayers(this.participants, "Collecting inputs...");
+	private collectPlayersCardInput(players: Player[]) {
+		toastPlayers(players, "Collecting inputs...");
 		const initializer = remotes.SendReadyForPlayerInput;
 		const receiver = remotes.ReceivePlayerInput;
-		return collectPlayerResponses<CardInput | EmptyObject>({
-			players: this.participants,
+		return collectPlayerResponses<CardInput>({
+			players: players,
 			collectionEvent: receiver,
 			timeout: PLAYER_TURN_TIME,
-			// TODO: This kinda is a repeat of the validator in remo
+			// TODO: This kinda is a repeat of the validator in remo (use Flamework and generics)
 			validator: t.union(
 				t.strictInterface({
+					kind: t.literal("PlayCard"),
 					cardUsed: isCardCheck,
 					targetSlot: t.number,
 				}),
-				t.strictInterface({}),
+				t.strictInterface({
+					kind: t.literal("EndTurn"),
+				}),
 			),
 			initialization: (player) => {
 				const combatant = this.playerTeam.find((c): c is PlayerCombatant =>
