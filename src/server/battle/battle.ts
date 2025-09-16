@@ -1,10 +1,17 @@
 import { toastPlayers } from "server/toast/toast";
-import { Combatant, isPlayerCombatant, PlayerCombatant } from "./combatant";
+import { Combatant, isOwnerByPlayer, isPlayerCombatant, PlayerCombatant } from "./combatant";
 import { CardController } from "./controllers/card-controller";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
 import { BattleClient } from "shared/types/battle";
-import { remotes } from "shared/remotes/remo";
+import { isCardCheck, remotes } from "shared/remotes/remo";
+import { Card } from "shared/types/cards";
+import { t } from "@rbxts/t";
+
+type CardInput = {
+	card: Card;
+	slot: number;
+};
 
 export class Battle {
 	// Metadata
@@ -45,10 +52,14 @@ export class Battle {
 
 	public async startBattle() {
 		await this.processInitialize();
+		await this.mainLoop();
+		this.endBattle();
+	}
+
+	private async mainLoop() {
 		while (!this.isBattleOver()) {
 			await this.takeTurn();
 		}
-		this.endBattle();
 	}
 
 	private processInitialize() {
@@ -78,29 +89,44 @@ export class Battle {
 		const players = this.playerTeam.filter(isPlayerCombatant);
 		while (players.size() > 0) {
 			const { responses, pending } = await this.collectPlayersCardInput(players);
-			// If response is end turn then remove
 			// Generate inputs for any pending
-			// Finish when everyone is finished
+			for (const player of pending) {
+				responses.set(player, undefined);
+			}
+
+			// If response is end turn then remove
+			const inputsToProcess = new Array<{ player: Player; input: CardInput }>();
+			for (const [player, input] of responses) {
+				if (input === undefined) {
+					players.remove(players.findIndex((c) => c.controller.owner === player));
+					continue;
+				}
+				inputsToProcess.push({ player: player, input: input });
+			}
+
+			// TODO: Process inputs (sort by priority, etc.)
+			print(inputsToProcess);
 		}
+		print("All players have ended their turn!");
 	}
 
 	private async processEntityInputs() {}
 
-	// TODO: This function should also process entity and enemy inputs
 	private collectPlayersCardInput(players: PlayerCombatant[]) {
 		toastPlayers(this.participants, "Collecting inputs...");
 		const initializer = remotes.SendReadyForPlayerInput;
 		const receiver = remotes.ReceivePlayerInput;
-		return collectPlayerResponses({
+		return collectPlayerResponses<CardInput>({
 			players: this.participants,
 			collectionEvent: receiver,
 			timeout: PLAYER_TURN_TIME,
+			validator: t.strictInterface({
+				card: isCardCheck,
+				slot: t.number,
+			}),
 			initialization: (player) => {
-				// TODO: Dependency inject players instead of this.playerTeam
-				const combatant = this.playerTeam.find(
-					// TODO: This line is kinda horrible
-					(c): c is PlayerCombatant =>
-						isPlayerCombatant(c) && c.controller.owner === player,
+				const combatant = this.playerTeam.find((c): c is PlayerCombatant =>
+					isOwnerByPlayer(c, player),
 				);
 				if (combatant === undefined) return print("Player combatant not found");
 				const playerHand = combatant.controller.getHand();

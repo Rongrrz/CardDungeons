@@ -4,7 +4,7 @@ import { cardCodenames } from "shared/data/cards/codenames";
 import { BattleClient } from "shared/types/battle";
 import { Card } from "shared/types/cards";
 
-const isCardCheck = t.strictInterface({
+export const isCardCheck = t.strictInterface({
 	card: t.literalList([...cardCodenames]),
 	quality: t.numberConstrained(80, 100),
 });

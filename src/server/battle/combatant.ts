@@ -66,3 +66,7 @@ export class Combatant {
 export function isPlayerCombatant(c: Combatant): c is PlayerCombatant {
 	return c.controller instanceof CardController;
 }
+
+export function isOwnerByPlayer(c: Combatant, player: Player): c is PlayerCombatant {
+	return isPlayerCombatant(c) && c.controller.owner === player;
+}
