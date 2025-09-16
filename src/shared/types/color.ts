@@ -1,6 +1,6 @@
 export type Color = "Green" | "Blue" | "Pink" | "Orange" | "Red";
 
-const colorToColor3: Record<Color, Color3> = {
+export const presetColors: Record<Color, Color3> = {
 	Green: Color3.fromRGB(100, 200, 100),
 	Blue: Color3.fromRGB(100, 200, 255),
 	Pink: Color3.fromRGB(255, 220, 220),
@@ -9,5 +9,5 @@ const colorToColor3: Record<Color, Color3> = {
 };
 
 export function getColor3(color: Color): Color3 {
-	return colorToColor3[color];
+	return presetColors[color];
 }
