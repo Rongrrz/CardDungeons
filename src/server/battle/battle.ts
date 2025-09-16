@@ -7,11 +7,16 @@ import { BattleClient } from "shared/types/battle";
 import { isCardCheck, remotes } from "shared/remotes/remo";
 import { Card } from "shared/types/cards";
 import { t } from "@rbxts/t";
+import { EmptyObject } from "shared/types/utils";
 
 type CardInput = {
-	card: Card;
-	slot: number;
+	cardUsed: Card;
+	targetSlot: number;
 };
+
+function isEmptyInput(input: CardInput | EmptyObject): input is EmptyObject {
+	return input.cardUsed === undefined;
+}
 
 export class Battle {
 	// Metadata
@@ -91,13 +96,13 @@ export class Battle {
 			const { responses, pending } = await this.collectPlayersCardInput(players);
 			// Generate inputs for any pending
 			for (const player of pending) {
-				responses.set(player, undefined);
+				responses.set(player, {});
 			}
 
 			// If response is end turn then remove
 			const inputsToProcess = new Array<{ player: Player; input: CardInput }>();
 			for (const [player, input] of responses) {
-				if (input === undefined) {
+				if (isEmptyInput(input)) {
 					players.remove(players.findIndex((c) => c.controller.owner === player));
 					continue;
 				}
@@ -105,7 +110,7 @@ export class Battle {
 			}
 
 			// TODO: Process inputs (sort by priority, etc.)
-			print(inputsToProcess);
+			// print(inputsToProcess);
 		}
 		print("All players have ended their turn!");
 	}
@@ -116,14 +121,18 @@ export class Battle {
 		toastPlayers(this.participants, "Collecting inputs...");
 		const initializer = remotes.SendReadyForPlayerInput;
 		const receiver = remotes.ReceivePlayerInput;
-		return collectPlayerResponses<CardInput>({
+		return collectPlayerResponses<CardInput | EmptyObject>({
 			players: this.participants,
 			collectionEvent: receiver,
 			timeout: PLAYER_TURN_TIME,
-			validator: t.strictInterface({
-				card: isCardCheck,
-				slot: t.number,
-			}),
+			// TODO: This kinda is a repeat of the validator in remo
+			validator: t.union(
+				t.strictInterface({
+					cardUsed: isCardCheck,
+					targetSlot: t.number,
+				}),
+				t.strictInterface({}),
+			),
 			initialization: (player) => {
 				const combatant = this.playerTeam.find((c): c is PlayerCombatant =>
 					isOwnerByPlayer(c, player),
@@ -135,12 +144,12 @@ export class Battle {
 		});
 	}
 
-	private calculateInputs() {
+	private async calculateInputs() {
 		toastPlayers(this.participants, "Calculating turn...");
 		task.wait(2);
 	}
 
-	private replicateInputs() {
+	private async replicateInputs() {
 		toastPlayers(this.participants, "Replicating turn fx...");
 		task.wait(2);
 	}

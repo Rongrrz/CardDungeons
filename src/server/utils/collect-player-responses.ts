@@ -15,8 +15,10 @@ type CollectionOptions<R> = {
 export async function collectPlayerResponses<R>(opts: CollectionOptions<R>) {
 	const { collectionEvent, initialization, validator, timeout } = opts;
 	const players = getPlayers(opts.players);
-	const responses = new Map<Player, R | undefined>();
-	const pending = new Set([...players]);
+
+	const awaiting = new Set<Player>([...players]);
+	const responses = new Map<Player, R>();
+	const ditched = new Set<Player>();
 
 	await new Promise<void>((resolve) => {
 		const finish = once(() => {
@@ -26,25 +28,28 @@ export async function collectPlayerResponses<R>(opts: CollectionOptions<R>) {
 		});
 
 		const collectionConn = collectionEvent.connect((player, result: R) => {
-			if (!pending.has(player)) return;
+			if (!awaiting.has(player)) return;
+			if (validator && validator(result) === false) {
+				print("Failed");
+				return;
+			}
+			print("Success");
 
-			// TODO: Still need additional validators, ex. check if player has specified card
-			if (validator && validator(result) !== true) return;
-
-			pending.delete(player);
+			awaiting.delete(player);
 			responses.set(player, result);
-			if (pending.size() === 0) finish();
+			if (awaiting.size() === 0) finish();
 		});
 
 		const playerLeaveConn = Players.PlayerRemoving.Connect((player) => {
-			if (!pending.has(player)) return;
-			pending.delete(player);
-			responses.set(player, undefined);
-			if (pending.size() === 0) finish();
+			if (!awaiting.has(player)) return;
+			awaiting.delete(player);
+			ditched.add(player);
+			if (awaiting.size() === 0) finish();
 		});
 
 		players.forEach((player) => initialization(player));
 		Promise.delay(timeout).andThen(finish);
 	});
-	return { responses, pending };
+
+	return { responses, pending: [...ditched, ...awaiting] };
 }

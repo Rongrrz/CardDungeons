@@ -3,3 +3,5 @@ export type StrictUnion<A, B> =
 	| (B & { [K in Exclude<keyof A, keyof B>]?: never });
 
 export type ModelName = Extract<keyof Omit<ReplicatedStorage["Models"], keyof Folder>, string>;
+
+export type EmptyObject = Record<string, never>;

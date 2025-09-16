@@ -4,6 +4,7 @@ import { BattleCard } from "./battle-card";
 import { useMotion } from "@rbxts/pretty-react-hooks";
 import { useAtom } from "@rbxts/react-charm";
 import { isCardContainerIn, playerHand } from "client/atoms/battle-inputting";
+import { ReplicatedStorage } from "@rbxts/services";
 
 const inPosition = new UDim2(0.5, 0, 1, -5);
 const outPosition = UDim2.fromScale(0.5, 1.2);
@@ -44,6 +45,7 @@ export function CardContainer(): ReactNode {
 				BorderSizePixel={0}
 				AnchorPoint={new Vector2(0.5, 1)}
 				Text={"End Turn"}
+				Event={{ MouseButton1Click: () => ReplicatedStorage.Remotes.EndTurnClicked.Fire() }}
 			/>
 
 			<frame
