@@ -1,4 +1,4 @@
-import { peek, subscribe } from "@rbxts/charm";
+import { subscribe } from "@rbxts/charm";
 import { produce } from "@rbxts/immut";
 import { Players, ReplicatedStorage, Workspace } from "@rbxts/services";
 import { Trove } from "@rbxts/trove";
@@ -11,7 +11,7 @@ import {
 import { playerModel } from "client/constants/battle";
 import { Selected } from "client/constants/selected";
 import { cards } from "shared/data/cards";
-import { CardTargetType, isTargetingAll } from "shared/data/cards/target-type";
+import { CardTargetType, isTargetingAll } from "shared/data/cards/card-target";
 import { remotes } from "shared/remotes/remo";
 import { BattleClient } from "shared/types/battle";
 import { Card } from "shared/types/cards";
@@ -23,21 +23,27 @@ const field = {
 };
 let prevTarget: Instance | undefined = undefined;
 
-// TODO: Change file back into index.client.ts and move these two atoms elsewhere
 const trove = new Trove();
 
 subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 	if (newSlot === undefined) return cardTargets([]);
 
-	const hand = peek(playerHand);
+	const hand = playerHand();
 	const newCard = cards[hand[newSlot].card];
 	const oldCard = oldSlot !== undefined ? cards[hand[oldSlot].card] : undefined;
-	if (newCard.targetType === oldCard?.targetType) return; // No need to change targets if same
+	if (newCard.cardTarget === oldCard?.cardTarget) return; // No need to change targets if same
 
-	switch (newCard.targetType) {
-		case CardTargetType.None:
-			cardTargets([]);
+	switch (newCard.cardTarget) {
+		case CardTargetType.All: {
+			const playerTeam = field.players.map((entity) => {
+				return { ...entity, selected: Selected.NotSelected };
+			});
+			const enemyTeam = field.enemies.map((entity) => {
+				return { ...entity, selected: Selected.NotSelected };
+			});
+			cardTargets([...playerTeam, ...enemyTeam]);
 			break;
+		}
 		case CardTargetType.User: {
 			const userModel = field.players.find((entity) => {
 				return entity.ownerUserId === Players.LocalPlayer.UserId;
@@ -66,23 +72,28 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 	}
 });
 
+function cleanPlayerInput() {
+	trove.clean();
+	selectedCardSlotAtom(undefined);
+	isCardContainerIn(false);
+}
+
 // TODO: Change server-side receiver to be RemoteFunction, for invalid player input
 function handleReceivePlayerInput(hand: Array<Card>) {
-	trove.clean();
+	cleanPlayerInput();
 	playerHand(hand);
-
 	isCardContainerIn(true);
 
 	const mouseConnection = mouse.Move.Connect(() => {
 		// Discontinue if no card is selected
-		const cardSlot = peek(selectedCardSlotAtom);
+		const cardSlot = selectedCardSlotAtom();
 		if (cardSlot === undefined) return;
 
 		// If we are hovering onto the same thing, no need to do anything either
 		const mouseTarget = mouse.Target;
 		if (mouseTarget === undefined || mouseTarget === prevTarget) return;
 
-		const targetModels = peek(cardTargets);
+		const targetModels = cardTargets();
 		const hoveringValidTarget = targetModels.find((m) => {
 			return mouseTarget.IsDescendantOf(m.model);
 		})?.model;
@@ -91,13 +102,13 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 		if (prevTarget === hoveringValidTarget) return;
 		prevTarget = mouseTarget;
 
-		const cardInfo = cards[peek(playerHand)[cardSlot].card];
+		const cardInfo = cards[playerHand()[cardSlot].card];
 		cardTargets((prev) => {
 			let changed = false;
 			const updated = prev.map((entry) => {
 				// TODO: Refurbish this piece of junk
 				const newIsSelected = hoveringValidTarget
-					? isTargetingAll(cardInfo.targetType)
+					? isTargetingAll(cardInfo.cardTarget)
 						? Selected.Selected
 						: hoveringValidTarget === entry.model
 							? Selected.Selected
@@ -115,35 +126,42 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 		});
 	});
 
-	const ClickConnection = mouse.Button1Up.Connect(() => {
-		// Discontinue if no card is selected
-		const cardSlot = peek(selectedCardSlotAtom);
-		if (cardSlot === undefined) return;
+	const clickConnection = mouse.Button1Up.Connect(() => {
+		const currentlySelectedCard = selectedCardSlotAtom();
+		if (currentlySelectedCard === undefined) return;
 
 		const mouseTarget = mouse.Target;
 		if (mouseTarget === undefined) return;
 
-		const targetModels = peek(cardTargets);
+		const targetModels = cardTargets();
 		const hoveringValidTarget = targetModels.find((m) => {
 			return mouseTarget.IsDescendantOf(m.model);
 		})?.model;
 
 		if (hoveringValidTarget === undefined) return;
-		const targets = peek(cardTargets);
+		const targets = cardTargets();
 
 		for (const t of targets) {
 			if (hoveringValidTarget !== t.model) continue;
-			const cardSlot = peek(selectedCardSlotAtom)!;
-			const card = peek(playerHand)[cardSlot];
-			trove.clean();
-			remotes.ReceivePlayerInput.fire(card, t.slot);
-
-			selectedCardSlotAtom(undefined);
+			const card = playerHand()[currentlySelectedCard];
+			remotes.ReceivePlayerInput.fire({
+				kind: "PlayCard",
+				cardUsed: card,
+				targetSlot: t.slot,
+			});
+			cleanPlayerInput();
 			return;
 		}
 	});
+
+	const endTurnConnection = ReplicatedStorage.Remotes.EndTurnClicked.Event.Connect(() => {
+		remotes.ReceivePlayerInput.fire({ kind: "EndTurn" });
+		cleanPlayerInput();
+	});
+
 	trove.add(mouseConnection);
-	trove.add(ClickConnection);
+	trove.add(clickConnection);
+	trove.add(endTurnConnection);
 }
 
 function handleInitializeBattleVisuals(battle: BattleClient) {
@@ -151,7 +169,7 @@ function handleInitializeBattleVisuals(battle: BattleClient) {
 		const model = ReplicatedStorage.Models[entity.model];
 		const clone = model.Clone();
 
-		clone.Name = tostring(entity.slot);
+		clone.Name = `e-${entity.slot}`;
 		const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
 		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
 		clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
@@ -165,7 +183,7 @@ function handleInitializeBattleVisuals(battle: BattleClient) {
 
 	battle.players.forEach((entity) => {
 		const clone = playerModel.Clone();
-		clone.Name = tostring(entity.slot);
+		clone.Name = `p-${entity.slot}`;
 
 		const node = Workspace.Battlefield.Player.FindFirstChild(entity.slot) as unknown as Part;
 		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);

@@ -31,3 +31,20 @@ export type BattleClient = {
 	players: Array<CombatantClient>;
 	enemies: Array<CombatantClient>;
 };
+
+export type PlayCard = {
+	kind: "PlayCard";
+	cardUsed: Card;
+	targetSlot: number;
+};
+
+type EndTurn = {
+	kind: "EndTurn";
+};
+
+export type PlayCardInput = {
+	player: Player;
+	action: Omit<PlayCard, "kind">;
+};
+
+export type CardInput = StrictUnion<PlayCard, EndTurn>;

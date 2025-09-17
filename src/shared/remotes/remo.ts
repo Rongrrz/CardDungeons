@@ -1,10 +1,10 @@
 import { Client, createRemotes, remote, Server } from "@rbxts/remo";
 import { t } from "@rbxts/t";
 import { cardCodenames } from "shared/data/cards/codenames";
-import { BattleClient } from "shared/types/battle";
+import { BattleClient, CardInput } from "shared/types/battle";
 import { Card } from "shared/types/cards";
 
-const isCardCheck = t.strictInterface({
+export const isCardCheck = t.strictInterface({
 	card: t.literalList([...cardCodenames]),
 	quality: t.numberConstrained(80, 100),
 });
@@ -16,5 +16,19 @@ export const remotes = createRemotes({
 
 	// Player inputs
 	SendReadyForPlayerInput: remote<Client, [hand: Array<Card>]>(t.array(isCardCheck)),
-	ReceivePlayerInput: remote<Server, [cardUsed: Card, targetSlot: number]>(isCardCheck, t.number),
+
+	// TODO: This is the same as the validator in collect-player-responses provided by battle
+	// TODO: Use Flamework here
+	ReceivePlayerInput: remote<Server, [CardInput]>(
+		t.union(
+			t.strictInterface({
+				kind: t.literal("PlayCard"),
+				cardUsed: isCardCheck,
+				targetSlot: t.number,
+			}),
+			t.strictInterface({
+				kind: t.literal("EndTurn"),
+			}),
+		),
+	),
 });

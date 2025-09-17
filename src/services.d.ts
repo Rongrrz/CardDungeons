@@ -17,6 +17,7 @@ interface ReplicatedStorage extends Instance {
 		SendToastMessage: RemoteEvent;
 		ReceivePlayerInput: RemoteEvent;
 		InitializeBattleVisuals: RemoteEvent;
+		EndTurnClicked: BindableEvent;
 	};
 	Models: Folder & {
 		GreenSlime: Model;
