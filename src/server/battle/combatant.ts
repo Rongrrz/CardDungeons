@@ -28,7 +28,7 @@ export class Combatant {
 		this.isAlive = this.stats.hp > 0;
 		this.controller = controller;
 		this.slot = slot;
-		this.model = "BlueSlime";
+		this.model = "BlueSlime"; // TODO: Make this dynamic
 	}
 
 	// TODO: Could look prettier
@@ -49,9 +49,13 @@ export class Combatant {
 	}
 
 	// Returns the actual amount of damage taken
-	public takeDamage(percentage: number, attacker: Combatant): number {
-		this.stats.hp -= 10;
-		return 10;
+	public takeDamage(multiplier: number, attacker: Combatant): number {
+		// TODO: Extract damage into a damage-calculation formula/function
+		const damage = math.floor(
+			math.max(1, multiplier * (attacker.stats.attack - this.stats.defense)),
+		);
+		this.stats.hp -= damage;
+		return damage;
 	}
 
 	// Returns the actual amount healed

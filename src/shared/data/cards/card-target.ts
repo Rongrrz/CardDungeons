@@ -7,7 +7,7 @@ export enum CardTargetType {
 	AllUserTeam,
 	AllEnemyTeam,
 
-	None,
+	All,
 
 	// TODO: Integrate later/when needed
 	// All,
@@ -19,5 +19,9 @@ export enum CardTargetType {
 }
 
 export function isTargetingAll(t: CardTargetType): boolean {
-	return t === CardTargetType.AllUserTeam || t === CardTargetType.AllEnemyTeam;
+	return (
+		t === CardTargetType.AllUserTeam ||
+		t === CardTargetType.AllEnemyTeam ||
+		t === CardTargetType.All
+	);
 }

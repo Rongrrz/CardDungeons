@@ -1,11 +1,14 @@
 import { toastPlayers } from "server/toast/toast";
 import { Combatant, isOwnerByPlayer, isPlayerCombatant, PlayerCombatant } from "./combatant";
-import { CardController } from "./controllers/card-controller";
+import { CardController, isCardController } from "./controllers/card-controller";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattleClient, CardInput } from "shared/types/battle";
+import { BattleClient, CardInput, PlayCard } from "shared/types/battle";
 import { isCardCheck, remotes } from "shared/remotes/remo";
 import { t } from "@rbxts/t";
+import { cards } from "shared/data/cards";
+import { CardTargetType } from "shared/data/cards/card-target";
+import { CardRoleType } from "shared/data/cards/card-role";
 
 export class Battle {
 	// Metadata
@@ -20,9 +23,8 @@ export class Battle {
 		this.playerTeam = playerTeam;
 		this.enemyTeam = enemyTeam;
 
-		// Populate participants
 		for (const entity of playerTeam) {
-			if (entity.controller instanceof CardController) {
+			if (isPlayerCombatant(entity)) {
 				this.participants.push(entity.controller.owner);
 			}
 		}
@@ -71,15 +73,15 @@ export class Battle {
 	private async takeTurn() {
 		this.turn++;
 		// Player inputs
-		await this.processPlayerInputs();
+		await this.handlePlayerInputs();
 
 		// Enemy & player team entity inputs
-		await this.processEntityInputs();
+		await this.handleEntityInputs();
 		await this.calculateInputs();
 		await this.replicateInputs();
 	}
 
-	private async processPlayerInputs() {
+	private async handlePlayerInputs() {
 		const playerCombatants = this.playerTeam.filter(isPlayerCombatant);
 		while (playerCombatants.size() > 0) {
 			const { responses, pending } = await this.collectPlayersCardInput(
@@ -90,7 +92,7 @@ export class Battle {
 			for (const player of pending) responses.set(player, { kind: "EndTurn" });
 
 			// If response is end turn then remove
-			const inputsToProcess = new Array<{ player: Player; input: CardInput }>();
+			const inputsToProcess = new Array<{ player: Player; input: PlayCard }>();
 			for (const [player, input] of responses) {
 				if (input.kind === "EndTurn") {
 					playerCombatants.remove(
@@ -101,13 +103,86 @@ export class Battle {
 				inputsToProcess.push({ player: player, input: input });
 			}
 
-			// TODO: Process inputs (sort by priority, etc.)
-			// print(inputsToProcess);
+			inputsToProcess.sort((a, b) => {
+				const priorityA = cards[a.input.cardUsed.card].priority;
+				const priorityB = cards[b.input.cardUsed.card].priority;
+				return priorityA > priorityB;
+			});
+
+			await this.processPlayerInputs(inputsToProcess);
 		}
-		print("All players have ended their turn!");
+		toastPlayers(this.participants, "All players have ended their turn!");
 	}
 
-	private async processEntityInputs() {}
+	// TODO: Get targets and do stuff to targets
+	// TODO: Add before/after card effect hooks
+	// TODO: Replicate effects and await for players to finish
+	private async processPlayerInputs(inputs: Array<{ player: Player; input: PlayCard }>) {
+		for (const input of inputs) {
+			// Remove card from user
+			const userCombatant = this.playerTeam.find((c) => isOwnerByPlayer(c, input.player))!;
+			userCombatant.controller.useCard(input.input.cardUsed);
+
+			// TODO: Extract handling targets
+			const card = cards[input.input.cardUsed.card];
+			const targets = new Array<Combatant>();
+			const targetType = card.cardTarget;
+			switch (targetType) {
+				case CardTargetType.All: {
+					const allTargets = [...this.playerTeam, ...this.enemyTeam];
+					for (const t of allTargets) targets.push(t);
+					break;
+				}
+				case CardTargetType.User: {
+					targets.push(userCombatant);
+					break;
+				}
+				case CardTargetType.AllEnemyTeam: {
+					for (const t of this.enemyTeam) targets.push(t);
+					break;
+				}
+				case CardTargetType.SingleEnemy: {
+					const enemy = this.enemyTeam.find((c) => c.slot === input.input.targetSlot)!;
+					targets.push(enemy);
+					break;
+				}
+				case CardTargetType.AllUserTeam: {
+					for (const t of this.playerTeam) targets.push(t);
+					break;
+				}
+				case CardTargetType.SingleUserTeam: {
+					const entity = this.playerTeam.find((c) => c.slot === input.input.targetSlot)!;
+					targets.push(entity);
+					break;
+				}
+			}
+
+			// TODO: Extract this damage stuff
+			for (const t of targets) {
+				switch (card.cardRole) {
+					case CardRoleType.Attack: {
+						const damageTaken = t.takeDamage(
+							(card.base / 100) * (input.input.cardUsed.quality / 100),
+							userCombatant,
+						);
+						print(`Damage taken: ${damageTaken}`);
+						break;
+					}
+					case CardRoleType.Support: {
+						// TODO: Fill this in
+						break;
+					}
+				}
+			}
+
+			const output = `Player: ${input.player.Name} used Card: ${input.input.cardUsed.card}`;
+			print(targets);
+			toastPlayers(this.participants, output);
+			task.wait(2);
+		}
+	}
+
+	private async handleEntityInputs() {}
 
 	private collectPlayersCardInput(players: Player[]) {
 		toastPlayers(players, "Collecting inputs...");
@@ -118,6 +193,7 @@ export class Battle {
 			collectionEvent: receiver,
 			timeout: PLAYER_TURN_TIME,
 			// TODO: This kinda is a repeat of the validator in remo (use Flamework and generics)
+			// TODO: Change this validator be check if player has card
 			validator: t.union(
 				t.strictInterface({
 					kind: t.literal("PlayCard"),

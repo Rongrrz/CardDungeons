@@ -11,7 +11,7 @@ import {
 import { playerModel } from "client/constants/battle";
 import { Selected } from "client/constants/selected";
 import { cards } from "shared/data/cards";
-import { CardTargetType, isTargetingAll } from "shared/data/cards/target-type";
+import { CardTargetType, isTargetingAll } from "shared/data/cards/card-target";
 import { remotes } from "shared/remotes/remo";
 import { BattleClient } from "shared/types/battle";
 import { Card } from "shared/types/cards";
@@ -31,12 +31,19 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 	const hand = playerHand();
 	const newCard = cards[hand[newSlot].card];
 	const oldCard = oldSlot !== undefined ? cards[hand[oldSlot].card] : undefined;
-	if (newCard.targetType === oldCard?.targetType) return; // No need to change targets if same
+	if (newCard.cardTarget === oldCard?.cardTarget) return; // No need to change targets if same
 
-	switch (newCard.targetType) {
-		case CardTargetType.None:
-			cardTargets([]);
+	switch (newCard.cardTarget) {
+		case CardTargetType.All: {
+			const playerTeam = field.players.map((entity) => {
+				return { ...entity, selected: Selected.NotSelected };
+			});
+			const enemyTeam = field.enemies.map((entity) => {
+				return { ...entity, selected: Selected.NotSelected };
+			});
+			cardTargets([...playerTeam, ...enemyTeam]);
 			break;
+		}
 		case CardTargetType.User: {
 			const userModel = field.players.find((entity) => {
 				return entity.ownerUserId === Players.LocalPlayer.UserId;
@@ -101,7 +108,7 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 			const updated = prev.map((entry) => {
 				// TODO: Refurbish this piece of junk
 				const newIsSelected = hoveringValidTarget
-					? isTargetingAll(cardInfo.targetType)
+					? isTargetingAll(cardInfo.cardTarget)
 						? Selected.Selected
 						: hoveringValidTarget === entry.model
 							? Selected.Selected

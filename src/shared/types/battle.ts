@@ -32,7 +32,7 @@ export type BattleClient = {
 	enemies: Array<CombatantClient>;
 };
 
-type PlayCard = {
+export type PlayCard = {
 	kind: "PlayCard";
 	cardUsed: Card;
 	targetSlot: number;

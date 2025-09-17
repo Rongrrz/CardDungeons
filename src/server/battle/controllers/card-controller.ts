@@ -12,12 +12,12 @@ export class CardController {
 	public constructor(owner: Player, deck: Array<Card>) {
 		this.owner = owner;
 
-		// Initialize our deck, polluting it with empty as needed
+		// Initialize our deck, polluting it with bad fireballs (for now) as needed
 		this.deck = [...deck];
 		while (this.deck.size() < 10) {
 			this.deck.push({
-				card: "empty",
-				quality: 0,
+				card: "fireball",
+				quality: 50,
 			});
 		}
 		this.totalCards = deck.size();
@@ -31,6 +31,16 @@ export class CardController {
 
 	public getHand(): Array<Card> {
 		return this.hand;
+	}
+
+	public useCard(card: Card): boolean {
+		const index = this.hand.findIndex(
+			(c) => c.card === card.card && c.quality === card.quality,
+		);
+		const usedCard = this.hand.remove(index);
+		if (usedCard === undefined) return false;
+		this.used.push(usedCard);
+		return true;
 	}
 }
 
