@@ -27,13 +27,13 @@ export async function collectPlayerResponses<R>(opts: CollectionOptions<R>) {
 			resolve();
 		});
 
+		// TODO: Return boolean, and make collectionEvent remote function
 		const collectionConn = collectionEvent.connect((player, result: R) => {
 			if (!awaiting.has(player)) return;
 			if (validator && validator(result) === false) {
-				print("Failed");
+				warn("Validator received an invalid input");
 				return;
 			}
-			print("Success");
 
 			awaiting.delete(player);
 			responses.set(player, result);

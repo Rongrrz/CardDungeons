@@ -33,7 +33,7 @@ export class CardController {
 		return this.hand;
 	}
 
-	public useCard(card: Card): boolean {
+	public spendCard(card: Card): boolean {
 		const index = this.hand.findIndex(
 			(c) => c.card === card.card && c.quality === card.quality,
 		);

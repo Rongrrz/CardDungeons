@@ -42,4 +42,9 @@ type EndTurn = {
 	kind: "EndTurn";
 };
 
+export type PlayCardInput = {
+	player: Player;
+	action: Omit<PlayCard, "kind">;
+};
+
 export type CardInput = StrictUnion<PlayCard, EndTurn>;
