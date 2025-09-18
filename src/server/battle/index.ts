@@ -7,7 +7,7 @@ import { isCardCheck, remotes } from "shared/remotes/remo";
 import { t } from "@rbxts/t";
 import { cards } from "shared/data/cards";
 import { getCardTargets } from "./targeting";
-import { resolveCardEffect } from "./card-effect";
+import { Card } from "shared/types/cards";
 
 export class Battle {
 	// Metadata
@@ -75,6 +75,8 @@ export class Battle {
 	// !SECTION
 
 	// SECTION Battle - Helper functions
+	// TODO: Some helper functions are actual key components of gameplay
+	// Extract those to their own section
 	public isBattleOver(): boolean {
 		return false;
 	}
@@ -149,12 +151,20 @@ export class Battle {
 			this.enemyTeam,
 		);
 
-		const replicationInfo = resolveCardEffect(input.action.cardUsed, user, targets);
+		// TODO: Add before/after card effect hooks
+		const replicationInfo = this.resolveCardUse(input.action.cardUsed, user, targets);
 
 		// TODO: Replicate effects and await for players to finish
 		const output = `Player ${input.player.Name} used card ${input.action.cardUsed.card}`;
 		toastPlayers(this.participants, output);
 		task.wait(2); // Artificial replication wait-time
+	}
+
+	private resolveCardUse(cardUsed: Card, user: PlayerCombatant, targets: Combatant[]) {
+		const cardInfo = cards[cardUsed.card];
+		const onUse = cardInfo.onUse;
+		if (onUse === undefined) return warn(`Resolver for card ${cardUsed.card} does not exist.`);
+		onUse(cardInfo, cardUsed.quality, user, targets);
 	}
 	// !SECTION
 

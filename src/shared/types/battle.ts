@@ -1,4 +1,4 @@
-import { Card } from "./cards";
+import { Card, CardInfo } from "./cards";
 import { ModelName, StrictUnion } from "./utils";
 
 export type BaseStats = {
@@ -48,3 +48,14 @@ export type PlayCardInput = {
 };
 
 export type CardInput = StrictUnion<PlayCard, EndTurn>;
+
+export type ICombatant = {
+	takeDamage(multiplier: number, attacker: ICombatant): number;
+};
+
+export type EffectResolver = (
+	card: CardInfo,
+	quality: number,
+	user: ICombatant,
+	targets: ICombatant[],
+) => void;

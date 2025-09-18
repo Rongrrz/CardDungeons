@@ -9,23 +9,23 @@ export class CardController {
 	private hand = new Array<Card>(); // Cards player current have in their hand
 	public readonly totalCards: number;
 
-	public constructor(owner: Player, deck: Array<Card>) {
+	public constructor(owner: Player, playerDeck: Array<Card>) {
 		this.owner = owner;
 
 		// Initialize our deck, polluting it with bad fireballs (for now) as needed
-		this.deck = [...deck];
-		while (this.deck.size() < 10) {
+		this.deck = [...playerDeck];
+		while (this.deck.size() < 1) {
 			this.deck.push({
 				card: "fireball",
-				quality: 50,
+				quality: 80,
 			});
 		}
-		this.totalCards = deck.size();
+		this.totalCards = this.deck.size();
 
 		// Shuffles the player's deck and initialize starting hand
-		knuthShuffleInPlace(deck);
-		for (const _ of $range(1, 3)) {
-			this.hand.push(deck.pop()!);
+		knuthShuffleInPlace(this.deck);
+		for (const _ of $range(1, this.totalCards)) {
+			this.hand.push(this.deck.pop()!);
 		}
 	}
 

@@ -1,3 +1,3 @@
-export const cardCodenames = ["fireball", "lightningStorm", "enhance"] as const;
+export const cardCodenames = ["fireball", "lightningStorm", "enhance", "tripleAttack"] as const;
 
 export type CardName = (typeof cardCodenames)[number];

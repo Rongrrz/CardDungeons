@@ -6,6 +6,7 @@ import {
 	BattleStats,
 	CombatantClient,
 	CombatantClientShared,
+	ICombatant,
 } from "shared/types/battle";
 import { ModelName } from "shared/types/utils";
 
@@ -13,7 +14,7 @@ export type PlayerCombatant = Combatant & {
 	controller: CardController;
 };
 
-export class Combatant {
+export class Combatant implements ICombatant {
 	public readonly model: ModelName;
 	private stats: BattleStats;
 	public isAlive: boolean;
