@@ -17,7 +17,12 @@ mockDeck.push({
 
 mockDeck.push({
 	card: "enhance",
-	quality: 88,
+	quality: math.random(80, 100),
+});
+
+mockDeck.push({
+	card: "tripleAttack",
+	quality: math.random(80, 100),
 });
 
 const ThetaEngineer = Players.WaitForChild("ThetaEngineer") as unknown as Player;
