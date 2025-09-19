@@ -1,6 +1,6 @@
 task.wait(3);
 
-import { Battle } from "server/battle";
+import { Battle } from "server/battle/battle";
 import { mockEnemyData } from "./mock-enemy";
 import { mockThetaEngineer } from "./mock-player";
 

@@ -8,19 +8,20 @@ import { t } from "@rbxts/t";
 import { cards } from "shared/data/cards";
 import { getCardTargets } from "./targeting";
 import { Card } from "shared/types/cards";
+import { ArrayUtilities } from "@rbxts/luau-polyfill";
 
 export class Battle {
 	// Metadata
 	private participants = new Array<Player>();
-
-	private playerTeam = new Array<Combatant>();
-	private enemyTeam = new Array<Combatant>();
+	private combatants = new Array<Combatant>();
 	private turn = 0;
 
-	public constructor(playerTeam: Array<Combatant>, enemyTeam: Array<Combatant>) {
-		this.playerTeam = playerTeam;
-		this.enemyTeam = enemyTeam;
-		this.participants = this.extractPlayersOfTeam(this.playerTeam);
+	public constructor(
+		playerTeam: Array<Combatant>,
+		enemyTeam: Array<Combatant & { isEnemy: true }>,
+	) {
+		this.combatants = ArrayUtilities.concat(playerTeam, enemyTeam);
+		this.participants = this.extractPlayersOfTeam(this.combatants);
 	}
 
 	// SECTION Battle - Public API
@@ -52,7 +53,7 @@ export class Battle {
 	}
 
 	private async playerPhase() {
-		const playerCombatants = this.getAlivePlayerCombatants(this.playerTeam);
+		const playerCombatants = this.getAlivePlayerCombatants();
 		while (playerCombatants.size() > 0) {
 			const activePlayers = playerCombatants.map((c) => c.controller.owner);
 			const { responses, pending } = await this.collectPlayersCardInput(activePlayers);
@@ -60,9 +61,7 @@ export class Battle {
 			await this.processBatchPlayerAction(inputsToProcess);
 		}
 		toastPlayers(this.participants, "All players have ended their turn!");
-		print("Player & enemy team after player phase");
-		print(this.playerTeam);
-		print(this.enemyTeam);
+		print("Combatants after player phase");
 	}
 
 	private async entityPhase() {
@@ -84,8 +83,7 @@ export class Battle {
 	private toClientRepresentation(): BattleClient {
 		return {
 			turn: this.turn,
-			players: this.playerTeam.map((e) => e.toClientRepresentation()),
-			enemies: this.enemyTeam.map((e) => e.toClientRepresentation()),
+			combatants: this.combatants.map((c) => c.toClientRepresentation()),
 		};
 	}
 
@@ -95,8 +93,8 @@ export class Battle {
 		return players;
 	}
 
-	private getAlivePlayerCombatants(team: Combatant[]): Array<PlayerCombatant> {
-		return this.playerTeam.filter(
+	private getAlivePlayerCombatants(): Array<PlayerCombatant> {
+		return this.combatants.filter(
 			(c): c is PlayerCombatant => isPlayerCombatant(c) && c.isAlive,
 		);
 	}
@@ -137,7 +135,7 @@ export class Battle {
 	}
 
 	private async processSinglePlayerAction(input: PlayCardInput) {
-		const user = this.getPlayerCombatant(this.playerTeam, input.player);
+		const user = this.getPlayerCombatant(this.combatants, input.player);
 		if (user === undefined) return warn(`No combatant found for player ${input.player.Name}`);
 
 		user.controller.spendCard(input.action.cardUsed);
@@ -147,8 +145,7 @@ export class Battle {
 			card.cardTarget,
 			user,
 			input.action.targetSlot,
-			this.playerTeam,
-			this.enemyTeam,
+			this.combatants,
 		);
 
 		// TODO: Add before/after card effect hooks
@@ -190,7 +187,7 @@ export class Battle {
 				}),
 			),
 			initialization: (player) => {
-				const combatant = this.playerTeam.find((c): c is PlayerCombatant =>
+				const combatant = this.combatants.find((c): c is PlayerCombatant =>
 					isOwnerByPlayer(c, player),
 				);
 				if (combatant === undefined) return print("Player combatant not found");

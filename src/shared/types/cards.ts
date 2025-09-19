@@ -1,6 +1,6 @@
 import { CardName } from "shared/data/cards/codenames";
 import { CardTargetType } from "shared/data/cards/card-target";
-import { EffectResolver } from "./battle";
+import { OnUseResolver } from "./battle";
 
 export type CardInfo = {
 	displayName: string;
@@ -9,7 +9,7 @@ export type CardInfo = {
 	priority: number; // 0-20
 	cardTarget: CardTargetType;
 	getDesc(quality: number): string;
-	onUse: EffectResolver;
+	onUse: OnUseResolver;
 };
 
 export type Card = {

@@ -10,6 +10,6 @@ const stats1: BaseStats = {
 };
 
 export const mockEnemyData: Array<Combatant> = [
-	new Combatant(1, stats1, new MoveController()),
-	new Combatant(2, stats1, new MoveController()),
+	new Combatant(1, stats1, new MoveController(), true),
+	new Combatant(2, stats1, new MoveController(), true),
 ];

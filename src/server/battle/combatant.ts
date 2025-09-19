@@ -19,13 +19,20 @@ export class Combatant implements ICombatant {
 	private stats: BattleStats;
 	public isAlive: boolean;
 	public controller: CardController | MoveController;
+	public readonly isEnemy: boolean;
 	public readonly slot: number;
 
-	constructor(slot: number, stats: BaseStats, controller: CardController | MoveController) {
+	constructor(
+		slot: number,
+		stats: BaseStats,
+		controller: CardController | MoveController,
+		isEnemy?: boolean,
+	) {
 		this.stats = produce(stats, (draft) => {
 			draft.hp = draft.hp ?? draft.maxHp;
 		}) as BattleStats;
 
+		this.isEnemy = isEnemy ?? false;
 		this.isAlive = this.stats.hp > 0;
 		this.controller = controller;
 		this.slot = slot;
@@ -38,6 +45,7 @@ export class Combatant implements ICombatant {
 			stats: this.stats,
 			model: this.model,
 			slot: this.slot,
+			isEnemy: this.isEnemy,
 		};
 		if (isPlayerCombatant(this)) {
 			return {

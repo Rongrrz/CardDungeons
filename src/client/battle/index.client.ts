@@ -165,37 +165,43 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 }
 
 function handleInitializeBattleVisuals(battle: BattleClient) {
-	battle.enemies.forEach((entity) => {
-		const model = ReplicatedStorage.Models[entity.model];
-		const clone = model.Clone();
+	battle.combatants
+		.filter((c) => c.isEnemy === true)
+		.forEach((entity) => {
+			const model = ReplicatedStorage.Models[entity.model];
+			const clone = model.Clone();
 
-		clone.Name = `e-${entity.slot}`;
-		const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
-		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
-		clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
-		clone.Parent = Workspace.Temporary.BattleEnemies;
+			clone.Name = `e-${entity.slot}`;
+			const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
+			const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
+			clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
+			clone.Parent = Workspace.Temporary.BattleEnemies;
 
-		field.enemies.push({
-			model: clone,
-			slot: entity.slot,
+			field.enemies.push({
+				model: clone,
+				slot: entity.slot,
+			});
 		});
-	});
 
-	battle.players.forEach((entity) => {
-		const clone = playerModel.Clone();
-		clone.Name = `p-${entity.slot}`;
+	battle.combatants
+		.filter((c) => c.isEnemy === false)
+		.forEach((entity) => {
+			const clone = playerModel.Clone();
+			clone.Name = `p-${entity.slot}`;
 
-		const node = Workspace.Battlefield.Player.FindFirstChild(entity.slot) as unknown as Part;
-		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
-		clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));
-		clone.Parent = Workspace.Temporary.BattlePlayers;
+			const node = Workspace.Battlefield.Player.FindFirstChild(
+				entity.slot,
+			) as unknown as Part;
+			const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
+			clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));
+			clone.Parent = Workspace.Temporary.BattlePlayers;
 
-		field.players.push({
-			model: clone,
-			slot: entity.slot,
-			ownerUserId: entity.ownerUserId,
+			field.players.push({
+				model: clone,
+				slot: entity.slot,
+				ownerUserId: entity.ownerUserId,
+			});
 		});
-	});
 	remotes.ReceiveBattleInitialized.fire(); // Tells the player that we have finished initializing
 }
 

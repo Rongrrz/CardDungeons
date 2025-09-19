@@ -1,3 +1,4 @@
+import { CardName } from "shared/data/cards/codenames";
 import { Card, CardInfo } from "./cards";
 import { ModelName, StrictUnion } from "./utils";
 
@@ -15,6 +16,7 @@ export type CombatantClientShared = {
 	stats: BattleStats;
 	model: ModelName;
 	slot: number;
+	isEnemy: boolean;
 };
 
 type CombatantClientEntity = CombatantClientShared & {};
@@ -28,8 +30,7 @@ export type CombatantClient = StrictUnion<CombatantClientEntity, CombatantClient
 
 export type BattleClient = {
 	turn: number;
-	players: Array<CombatantClient>;
-	enemies: Array<CombatantClient>;
+	combatants: Array<CombatantClient>;
 };
 
 export type PlayCard = {
@@ -50,12 +51,23 @@ export type PlayCardInput = {
 export type CardInput = StrictUnion<PlayCard, EndTurn>;
 
 export type ICombatant = {
+	isEnemy: boolean;
+	slot: number;
 	takeDamage(multiplier: number, attacker: ICombatant): number;
 };
 
-export type EffectResolver = (
+export type OnUseReplicationInfo = {
+	slot: number;
+	isEnemy: boolean;
+	numbers?: Array<{
+		damage: number;
+		crit: boolean;
+	}>;
+}[];
+
+export type OnUseResolver = (
 	card: CardInfo,
 	quality: number,
 	user: ICombatant,
 	targets: ICombatant[],
-) => void;
+) => OnUseReplicationInfo;
