@@ -2,7 +2,7 @@ import { toastPlayers } from "server/toast/toast";
 import { Combatant, isOwnerByPlayer, isPlayerCombatant, PlayerCombatant } from "./combatant";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattleClient, CardInput, PlayCardInput } from "shared/types/battle";
+import { BattleClient, CardInput, OnUseReplicationInfo, PlayCardInput } from "shared/types/battle";
 import { isCardCheck, remotes } from "shared/remotes/remo";
 import { t } from "@rbxts/t";
 import { cards } from "shared/data/cards";
@@ -154,14 +154,34 @@ export class Battle {
 		// TODO: Replicate effects and await for players to finish
 		const output = `Player ${input.player.Name} used card ${input.action.cardUsed.card}`;
 		toastPlayers(this.participants, output);
-		task.wait(2); // Artificial replication wait-time
+		const initializer = remotes.ReplicateCardOnUse;
+		const receiver = remotes.ReplicateCardOnUseFinished;
+		await collectPlayerResponses({
+			players: this.participants,
+			collectionEvent: receiver,
+			timeout: BF_INIT_TIME,
+			initialization: (player) =>
+				initializer.fire(
+					player,
+					input.action.cardUsed.card,
+					input.action.targetSlot,
+					replicationInfo,
+				),
+		});
 	}
 
-	private resolveCardUse(cardUsed: Card, user: PlayerCombatant, targets: Combatant[]) {
+	private resolveCardUse(
+		cardUsed: Card,
+		user: PlayerCombatant,
+		targets: Combatant[],
+	): OnUseReplicationInfo {
 		const cardInfo = cards[cardUsed.card];
 		const onUse = cardInfo.onUse;
-		if (onUse === undefined) return warn(`Resolver for card ${cardUsed.card} does not exist.`);
-		onUse(cardInfo, cardUsed.quality, user, targets);
+		if (onUse === undefined) {
+			warn(`Resolver for card ${cardUsed.card} does not exist.`);
+			return [];
+		}
+		return onUse(cardInfo, cardUsed.quality, user, targets);
 	}
 	// !SECTION
 
