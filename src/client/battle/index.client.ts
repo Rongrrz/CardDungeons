@@ -207,3 +207,6 @@ function handleInitializeBattleVisuals(battle: BattleClient) {
 
 remotes.SendBattleSnapshot.connect(handleInitializeBattleVisuals);
 remotes.SendReadyForPlayerInput.connect(handleReceivePlayerInput);
+remotes.ReplicateCardOnUse.connect((card, targetSlot, replicationInfo) => {
+	print(replicationInfo);
+});
