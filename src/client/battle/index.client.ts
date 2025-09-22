@@ -23,6 +23,7 @@ let prevTarget: Instance | undefined = undefined;
 
 const trove = new Trove();
 
+// TODO: Refactor this file
 subscribe(selectedHandIndexAtom, (newSlot, oldSlot) => {
 	if (newSlot === undefined) return targetMarksAtom([]);
 
