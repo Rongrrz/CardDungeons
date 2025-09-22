@@ -28,6 +28,8 @@ mockDeck.push({
 const ThetaEngineer = Players.WaitForChild("ThetaEngineer") as unknown as Player;
 
 export const mockThetaEngineer: Combatant = new Combatant(
+	"a",
+	false,
 	1,
 	{ attack: 15, defense: 5, maxHp: 100, speed: 15 },
 	new CardController(ThetaEngineer, mockDeck),

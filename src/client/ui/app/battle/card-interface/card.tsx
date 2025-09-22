@@ -1,8 +1,8 @@
 import { useMotion } from "@rbxts/pretty-react-hooks";
 import React, { ReactNode, useEffect } from "@rbxts/react";
 import { useAtom } from "@rbxts/react-charm";
-import { selectedCardSlotAtom } from "client/atoms/battle-inputting";
-import { cards } from "shared/data/cards";
+import { selectedHandIndexAtom } from "client/atoms/battle-inputting";
+import { CARD } from "shared/data/cards";
 import { Card } from "shared/types/battle/cards";
 
 type BattleCardProps = Card & {
@@ -14,7 +14,7 @@ type BattleCardProps = Card & {
 export function BattleCard(props: BattleCardProps): ReactNode {
 	const [stroke, strokeMotion] = useMotion(0);
 	const [cardColor, cardColorMotion] = useMotion(Color3.fromRGB(255, 255, 255));
-	const selectedCardSlot = useAtom(selectedCardSlotAtom);
+	const selectedCardSlot = useAtom(selectedHandIndexAtom);
 
 	useEffect(() => {
 		const using = selectedCardSlot === props.cardSlot;
@@ -22,7 +22,7 @@ export function BattleCard(props: BattleCardProps): ReactNode {
 		cardColorMotion.spring(goal);
 	}, [selectedCardSlot]);
 
-	const displayName = cards[props.card].displayName;
+	const displayName = CARD[props.card].displayName;
 
 	return (
 		<frame Transparency={1} Size={UDim2.fromScale(1, 1)}>
@@ -38,7 +38,7 @@ export function BattleCard(props: BattleCardProps): ReactNode {
 						props.onHoverEnd();
 					},
 					MouseButton1Click: () => {
-						selectedCardSlotAtom((current) =>
+						selectedHandIndexAtom((current) =>
 							current === props.cardSlot ? undefined : props.cardSlot,
 						);
 					},

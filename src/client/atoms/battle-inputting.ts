@@ -3,19 +3,18 @@ import { Selected } from "client/constants/selected";
 import { Card } from "shared/types/battle/cards";
 
 // For whenever the player is inputting, this is if the card container should be in or not.
-export const isCardContainerIn = atom<boolean>(false);
+export const isCardTrayOpenAtom = atom<boolean>(false);
 
-export const selectedCardSlotAtom = atom<number>(undefined);
+export const selectedHandIndexAtom = atom<number>(undefined);
 
-export const playerHand = atom<Card[]>([]);
+export const cardInHandAtom = atom<Array<Card>>([]);
 
-// For whenever the player is selecting a target with a designated card.
-export type CardTarget = {
-	model: Model;
-	slot: number;
+export type TargetedCombatants = {
 	selected: Selected;
+	slot: number;
+	isEnemy: boolean;
 };
-export const cardTargets = atom<Array<CardTarget>>([]);
+export const targetMarksAtom = atom<Array<TargetedCombatants>>([]);
 
 export type CombatantModel = {
 	model: Model;
@@ -23,5 +22,6 @@ export type CombatantModel = {
 	isEnemy: boolean;
 	maxhp: number;
 	hp: number;
+	ownerUserId?: number;
 };
-export const combatantModels = atom<Array<CombatantModel>>([]);
+export const fieldCombatantsAtom = atom<Array<CombatantModel>>([]);

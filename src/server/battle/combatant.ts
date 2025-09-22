@@ -1,32 +1,31 @@
 import { produce } from "@rbxts/immut";
 import { CardController } from "./controllers/card-controller";
 import { MoveController } from "./controllers/move-controller";
-import { ModelName } from "shared/types/utils";
-import {
-	BaseStats,
-	BattleStats,
-	CombatantClientShared,
-	ICombatant,
-} from "shared/types/battle/shared";
+import { BaseStats, BattleStats } from "shared/types/battle/shared";
 import { CombatantClient } from "shared/types/battle/battle";
 
-export type PlayerCombatant = Combatant & {
-	controller: CardController;
-};
+type AnyController = CardController | MoveController;
+export type AllyCombatant = Combatant<false>;
+export type EnemyCombatant = Combatant<true>;
+export type PlayerCombatant = AllyCombatant & { controller: CardController };
 
-export class Combatant implements ICombatant {
-	public readonly model: ModelName;
+export class Combatant<
+	IsEnemy extends boolean = boolean,
+	Controller extends AnyController = AnyController,
+> {
+	public readonly entity: string;
 	private stats: BattleStats;
 	public isAlive: boolean;
-	public controller: CardController | MoveController;
-	public readonly isEnemy: boolean;
+	public controller: Controller;
+	public readonly isEnemy: IsEnemy;
 	public readonly slot: number;
 
-	constructor(
+	public constructor(
+		entity: string,
+		isEnemy: IsEnemy,
 		slot: number,
 		stats: BaseStats,
-		controller: CardController | MoveController,
-		isEnemy?: boolean,
+		controller: Controller,
 	) {
 		this.stats = produce(stats, (draft) => {
 			draft.hp = draft.hp ?? draft.maxHp;
@@ -36,14 +35,14 @@ export class Combatant implements ICombatant {
 		this.isAlive = this.stats.hp > 0;
 		this.controller = controller;
 		this.slot = slot;
-		this.model = "BlueSlime"; // TODO: Make this dynamic
+		this.entity = "BlueSlime"; // TODO: Change later
 	}
 
 	// TODO: Could look prettier
 	public toClientRepresentation(): CombatantClient {
-		const shared: CombatantClientShared = {
+		const shared = {
 			stats: this.stats,
-			model: this.model,
+			entity: this.entity,
 			slot: this.slot,
 			isEnemy: this.isEnemy,
 		};
@@ -54,29 +53,31 @@ export class Combatant implements ICombatant {
 				ownerUserId: this.controller.owner.UserId,
 			};
 		}
-		return { ...shared };
+		return shared;
 	}
 
 	public getStats(): Readonly<BattleStats> {
 		return this.stats;
 	}
 
-	// Returns the actual amount of damage taken
-	public takeDamage(multiplier: number, attacker: Combatant): number {
-		// TODO: Extract damage into a damage-calculation formula/function
-		const damage = math.floor(
-			math.max(1, multiplier * (attacker.stats.attack - this.stats.defense)),
-		);
-		this.stats.hp -= damage;
-		return damage;
+	/**
+	 * @returns the actual amount of HP taken after other considerations
+	 */
+	public takeDamage(amount: number, attacker: Combatant): number {
+		if (this.isAlive === false) return 0;
+		const startingHp = this.stats.hp;
+		this.stats.hp = math.max(this.stats.hp - amount, 0);
+		return startingHp - this.stats.hp;
 	}
 
-	// Returns the actual amount healed
+	/**
+	 * @returns the actual amount of HP healed after other considerations
+	 */
 	public heal(amount: number): number {
-		if (!this.isAlive) return 0;
-		const amountHealed = math.min(this.stats.hp + amount, this.stats.maxHp);
-		this.stats.hp += amountHealed;
-		return amountHealed;
+		if (this.isAlive === false) return 0;
+		const startingHp = this.stats.hp;
+		this.stats.hp = math.min(this.stats.hp + amount, this.stats.maxHp);
+		return this.stats.hp - startingHp;
 	}
 }
 

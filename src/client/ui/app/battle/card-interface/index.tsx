@@ -1,9 +1,9 @@
 import React, { ReactNode, useEffect, useState } from "@rbxts/react";
-import { cards } from "shared/data/cards";
+import { CARD } from "shared/data/cards";
 import { BattleCard } from "./card";
 import { useMotion } from "@rbxts/pretty-react-hooks";
 import { useAtom } from "@rbxts/react-charm";
-import { isCardContainerIn, playerHand } from "client/atoms/battle-inputting";
+import { isCardTrayOpenAtom, cardInHandAtom } from "client/atoms/battle-inputting";
 import { ReplicatedStorage } from "@rbxts/services";
 
 const inPosition = new UDim2(0.5, 0, 1, -5);
@@ -12,8 +12,8 @@ const outPosition = UDim2.fromScale(0.5, 1.2);
 export function CardContainer(): ReactNode {
 	const [tooltip, setTooltip] = useState<string>("");
 	const [framePos, framePosMotion] = useMotion(outPosition);
-	const hand = useAtom(playerHand);
-	const isIn = useAtom(isCardContainerIn);
+	const hand = useAtom(cardInHandAtom);
+	const isIn = useAtom(isCardTrayOpenAtom);
 
 	useEffect(() => {
 		const frameUDim2 = isIn ? inPosition : outPosition;
@@ -70,7 +70,7 @@ export function CardContainer(): ReactNode {
 							card={card.card}
 							quality={card.quality}
 							onHoverStart={() => {
-								const text = cards[card.card].getDesc(card.quality);
+								const text = CARD[card.card].getDesc(card.quality);
 								task.delay(0, () => setTooltip(text));
 							}}
 							onHoverEnd={() => setTooltip("")}

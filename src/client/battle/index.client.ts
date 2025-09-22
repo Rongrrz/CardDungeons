@@ -3,70 +3,72 @@ import Immut, { produce } from "@rbxts/immut";
 import { Players, ReplicatedStorage, Workspace } from "@rbxts/services";
 import { Trove } from "@rbxts/trove";
 import {
-	cardTargets,
-	combatantModels,
-	isCardContainerIn,
-	playerHand,
-	selectedCardSlotAtom,
+	fieldCombatantsAtom,
+	isCardTrayOpenAtom,
+	cardInHandAtom,
+	selectedHandIndexAtom,
+	targetMarksAtom,
 } from "client/atoms/battle-inputting";
 import { playerModel } from "client/constants/battle";
 import { Selected } from "client/constants/selected";
-import { cards } from "shared/data/cards";
+import { CARD } from "shared/data/cards";
 import { CardTargetType, isTargetingAll } from "shared/data/cards/card-target";
 import { remotes } from "shared/remotes/remo";
 import { BattleClient } from "shared/types/battle/battle";
 import { Card } from "shared/types/battle/cards";
+import { getCombatantModel } from "./get-combatant-model";
 
 const mouse = Players.LocalPlayer.GetMouse();
-const field = {
-	players: new Array<{ model: Model; slot: number; ownerUserId?: number }>(),
-	enemies: new Array<{ model: Model; slot: number }>(),
-};
 let prevTarget: Instance | undefined = undefined;
 
 const trove = new Trove();
 
-subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
-	if (newSlot === undefined) return cardTargets([]);
+subscribe(selectedHandIndexAtom, (newSlot, oldSlot) => {
+	if (newSlot === undefined) return targetMarksAtom([]);
 
-	const hand = playerHand();
-	const newCard = cards[hand[newSlot].card];
-	const oldCard = oldSlot !== undefined ? cards[hand[oldSlot].card] : undefined;
+	const hand = cardInHandAtom();
+	const newCard = CARD[hand[newSlot].card];
+	const oldCard = oldSlot !== undefined ? CARD[hand[oldSlot].card] : undefined;
 	if (newCard.cardTarget === oldCard?.cardTarget) return; // No need to change targets if same
 
 	switch (newCard.cardTarget) {
 		case CardTargetType.All: {
-			const playerTeam = field.players.map((entity) => {
-				return { ...entity, selected: Selected.NotSelected };
-			});
-			const enemyTeam = field.enemies.map((entity) => {
-				return { ...entity, selected: Selected.NotSelected };
-			});
-			cardTargets([...playerTeam, ...enemyTeam]);
+			targetMarksAtom(
+				fieldCombatantsAtom().map((c) => {
+					return { isEnemy: c.isEnemy, slot: c.slot, selected: Selected.NotSelected };
+				}),
+			);
 			break;
 		}
 		case CardTargetType.User: {
-			const userModel = field.players.find((entity) => {
-				return entity.ownerUserId === Players.LocalPlayer.UserId;
+			const user = fieldCombatantsAtom().find((c) => {
+				return c.ownerUserId === Players.LocalPlayer.UserId;
 			});
-			cardTargets([{ ...userModel!, selected: Selected.NotSelected }]);
+			const result = user
+				? [{ isEnemy: user.isEnemy, slot: user.slot, selected: Selected.NotSelected }]
+				: [];
+			targetMarksAtom(result);
 			break;
 		}
 		case CardTargetType.AllEnemyTeam:
 		case CardTargetType.SingleEnemy: {
-			cardTargets(
-				field.enemies.map((entity) => {
-					return { ...entity, selected: Selected.NotSelected };
-				}),
+			targetMarksAtom(
+				fieldCombatantsAtom()
+					.filter((c) => c.isEnemy === true)
+					.map((c) => {
+						return { isEnemy: c.isEnemy, slot: c.slot, selected: Selected.NotSelected };
+					}),
 			);
 			break;
 		}
 		case CardTargetType.AllUserTeam:
 		case CardTargetType.SingleUserTeam: {
-			cardTargets(
-				field.players.map((entity) => {
-					return { ...entity, selected: Selected.NotSelected };
-				}),
+			targetMarksAtom(
+				fieldCombatantsAtom()
+					.filter((c) => c.isEnemy === false)
+					.map((c) => {
+						return { isEnemy: c.isEnemy, slot: c.slot, selected: Selected.NotSelected };
+					}),
 			);
 			break;
 		}
@@ -75,43 +77,45 @@ subscribe(selectedCardSlotAtom, (newSlot, oldSlot) => {
 
 function cleanPlayerInput() {
 	trove.clean();
-	selectedCardSlotAtom(undefined);
-	isCardContainerIn(false);
+	selectedHandIndexAtom(undefined);
+	isCardTrayOpenAtom(false);
 }
 
 // TODO: Change server-side receiver to be RemoteFunction, for invalid player input
 function handleReceivePlayerInput(hand: Array<Card>) {
 	cleanPlayerInput();
-	playerHand(hand);
-	isCardContainerIn(true);
+	cardInHandAtom(hand);
+	isCardTrayOpenAtom(true);
 
 	const mouseConnection = mouse.Move.Connect(() => {
 		// Discontinue if no card is selected
-		const cardSlot = selectedCardSlotAtom();
+		const cardSlot = selectedHandIndexAtom();
 		if (cardSlot === undefined) return;
 
 		// If we are hovering onto the same thing, no need to do anything either
 		const mouseTarget = mouse.Target;
 		if (mouseTarget === undefined || mouseTarget === prevTarget) return;
 
-		const targetModels = cardTargets();
+		const targetModels = targetMarksAtom()
+			.map((c) => getCombatantModel(c.isEnemy, c.slot))
+			.filterUndefined();
 		const hoveringValidTarget = targetModels.find((m) => {
-			return mouseTarget.IsDescendantOf(m.model);
-		})?.model;
+			return mouseTarget.IsDescendantOf(m);
+		});
 
 		// If both are the same (undefined), we have already cleared selection in previous cycle
 		if (prevTarget === hoveringValidTarget) return;
 		prevTarget = mouseTarget;
 
-		const cardInfo = cards[playerHand()[cardSlot].card];
-		cardTargets((prev) => {
+		const cardInfo = CARD[cardInHandAtom()[cardSlot].card];
+		targetMarksAtom((prev) => {
 			let changed = false;
 			const updated = prev.map((entry) => {
 				// TODO: Refurbish this piece of junk
 				const newIsSelected = hoveringValidTarget
 					? isTargetingAll(cardInfo.cardTarget)
 						? Selected.Selected
-						: hoveringValidTarget === entry.model
+						: hoveringValidTarget === getCombatantModel(entry.isEnemy, entry.slot)
 							? Selected.Selected
 							: Selected.NotSelected
 					: Selected.NotSelected;
@@ -128,23 +132,26 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 	});
 
 	const clickConnection = mouse.Button1Up.Connect(() => {
-		const currentlySelectedCard = selectedCardSlotAtom();
+		const currentlySelectedCard = selectedHandIndexAtom();
 		if (currentlySelectedCard === undefined) return;
 
 		const mouseTarget = mouse.Target;
 		if (mouseTarget === undefined) return;
 
-		const targetModels = cardTargets();
+		const targetModels = targetMarksAtom()
+			.map((c) => getCombatantModel(c.isEnemy, c.slot))
+			.filterUndefined();
 		const hoveringValidTarget = targetModels.find((m) => {
-			return mouseTarget.IsDescendantOf(m.model);
-		})?.model;
+			return mouseTarget.IsDescendantOf(m);
+		});
 
 		if (hoveringValidTarget === undefined) return;
-		const targets = cardTargets();
+		const targets = targetMarksAtom();
 
 		for (const t of targets) {
-			if (hoveringValidTarget !== t.model) continue;
-			const card = playerHand()[currentlySelectedCard];
+			// TODO: Querying Workspace excessively with getCombatantModel
+			if (hoveringValidTarget !== getCombatantModel(t.isEnemy, t.slot)) continue;
+			const card = cardInHandAtom()[currentlySelectedCard];
 			remotes.ReceivePlayerInput.fire({
 				kind: "PlayCard",
 				cardUsed: card,
@@ -168,28 +175,29 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 function handleInitializeBattleVisuals(battle: BattleClient) {
 	battle.combatants
 		.filter((c) => c.isEnemy === true)
-		.forEach((entity) => {
-			const model = ReplicatedStorage.Models[entity.model];
+		.forEach((combatant) => {
+			const model =
+				(ReplicatedStorage.Models.FindFirstChild(combatant.entity) as unknown as Model) ??
+				playerModel;
 			const clone = model.Clone();
 
-			clone.Name = `e-${entity.slot}`;
-			const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
+			clone.Name = `e-${combatant.slot}`;
+			const node = Workspace.Battlefield.Enemy.FindFirstChild(
+				combatant.slot,
+			) as unknown as Part;
 			const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
 			clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
 			clone.Parent = Workspace.Temporary.BattleEnemies;
 
-			field.enemies.push({
-				model: clone,
-				slot: entity.slot,
-			});
-			combatantModels((current) =>
+			fieldCombatantsAtom((current) =>
 				produce(current, (draft) => {
 					Immut.table.insert(draft, {
 						model: clone,
-						slot: entity.slot,
-						isEnemy: entity.isEnemy,
-						hp: entity.stats.hp,
-						maxhp: entity.stats.maxHp,
+						slot: combatant.slot,
+						isEnemy: combatant.isEnemy,
+						hp: combatant.stats.hp,
+						maxhp: combatant.stats.maxHp,
+						ownerUserId: combatant.ownerUserId,
 					});
 				}),
 			);
@@ -197,30 +205,26 @@ function handleInitializeBattleVisuals(battle: BattleClient) {
 
 	battle.combatants
 		.filter((c) => c.isEnemy === false)
-		.forEach((entity) => {
+		.forEach((combatant) => {
 			const clone = playerModel.Clone();
-			clone.Name = `p-${entity.slot}`;
+			clone.Name = `p-${combatant.slot}`;
 
 			const node = Workspace.Battlefield.Player.FindFirstChild(
-				entity.slot,
+				combatant.slot,
 			) as unknown as Part;
 			const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
 			clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));
 			clone.Parent = Workspace.Temporary.BattlePlayers;
 
-			field.players.push({
-				model: clone,
-				slot: entity.slot,
-				ownerUserId: entity.ownerUserId,
-			});
-			combatantModels((current) =>
+			fieldCombatantsAtom((current) =>
 				produce(current, (draft) => {
 					Immut.table.insert(draft, {
 						model: clone,
-						slot: entity.slot,
-						isEnemy: entity.isEnemy,
-						hp: entity.stats.hp,
-						maxhp: entity.stats.maxHp,
+						slot: combatant.slot,
+						isEnemy: combatant.isEnemy,
+						hp: combatant.stats.hp,
+						maxhp: combatant.stats.maxHp,
+						ownerUserId: combatant.ownerUserId,
 					});
 				}),
 			);
@@ -232,7 +236,7 @@ remotes.SendBattleSnapshot.connect(handleInitializeBattleVisuals);
 remotes.SendReadyForPlayerInput.connect(handleReceivePlayerInput);
 remotes.ReplicateCardOnUse.connect((card, targetSlot, replicationInfo) => {
 	print(`Card ${card} use on slot ${targetSlot}`);
-	combatantModels((current) =>
+	fieldCombatantsAtom((current) =>
 		produce(current, (draft) => {
 			// Brute-force update HP & MaxHP
 			for (const target of replicationInfo) {

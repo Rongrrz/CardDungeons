@@ -2,7 +2,7 @@ import { CreateReactStory, Number } from "@rbxts/ui-labs";
 import React from "@rbxts/react";
 import ReactRoblox from "@rbxts/react-roblox";
 import { CardContainer } from "client/ui/app/battle/card-interface";
-import { isCardContainerIn, playerHand } from "client/atoms/battle-inputting";
+import { isCardTrayOpenAtom, cardInHandAtom } from "client/atoms/battle-inputting";
 import { Card } from "shared/types/battle/cards";
 
 const controls = {
@@ -22,8 +22,8 @@ function Component(props: Component) {
 			quality: math.random(80, 100),
 		});
 	}
-	playerHand(cardTable);
-	isCardContainerIn(true);
+	cardInHandAtom(cardTable);
+	isCardTrayOpenAtom(true);
 	return <CardContainer />;
 }
 

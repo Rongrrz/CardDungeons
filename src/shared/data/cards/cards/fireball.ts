@@ -1,7 +1,6 @@
 import { calculateMultiplier } from "../utils";
 import { CardTargetType } from "../card-target";
 import { CardInfo } from "shared/types/battle/cards";
-import { resolveDamageOnce } from "../generic-on-use-resolvers/damageOnce";
 
 export const fireball: CardInfo = {
 	displayName: "Fireball",
@@ -13,5 +12,4 @@ export const fireball: CardInfo = {
 		const calculated = calculateMultiplier(this.base, quality);
 		return `Cast a fireball spell towards a single-target, dealing ${calculated}% of attack as damage.`;
 	},
-	onUse: resolveDamageOnce,
 };

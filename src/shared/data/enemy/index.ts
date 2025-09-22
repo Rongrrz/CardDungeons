@@ -3,7 +3,7 @@ import { greenSlime } from "./enemies/green-slime";
 import { EnemyName } from "./codenames";
 import { EnemyData } from "./types";
 
-export const enemies: Record<EnemyName, EnemyData> = {
+export const ENEMY: Record<EnemyName, EnemyData> = {
 	greenSlime: greenSlime,
 	blueSlime: blueSlime,
 };

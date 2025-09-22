@@ -1,8 +1,9 @@
-import { StrictUnion } from "../utils";
+import { damageNumber } from "../damage-number";
+import { StrictUnion } from "../general";
 import { Card } from "./cards";
 import { CombatantClientShared } from "./shared";
 
-export type CombatantClient = StrictUnion<CombatantClientEntity, CombatantClientPlayer> | never;
+export type CombatantClient = StrictUnion<CombatantClientEntity, CombatantClientPlayer>;
 
 type CombatantClientPlayer = CombatantClientShared & {
 	ownerUserId: number;
@@ -15,7 +16,7 @@ export type BattleClient = {
 	combatants: Array<CombatantClient>;
 };
 
-// Inputs / actions
+// Inputs/actions
 export type PlayCard = {
 	kind: "PlayCard";
 	cardUsed: Card;
@@ -30,3 +31,14 @@ export type PlayCardInput = {
 };
 
 export type CardInput = StrictUnion<PlayCard, EndTurn>;
+
+export type OnUseReplicationInfo = {
+	slot: number;
+	isEnemy: boolean;
+	numbers?: Array<{
+		number: number;
+		damageType: damageNumber;
+	}>;
+	finalHp: number;
+	finalMaxHp: number;
+}[];

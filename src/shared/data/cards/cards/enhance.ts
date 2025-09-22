@@ -1,6 +1,5 @@
 import { CardInfo } from "shared/types/battle/cards";
 import { CardTargetType } from "../card-target";
-import { resolveDoNothing } from "../generic-on-use-resolvers/doNothing";
 
 export const enhance: CardInfo = {
 	displayName: "Enhance",
@@ -11,5 +10,4 @@ export const enhance: CardInfo = {
 	getDesc() {
 		return `Gain 2 stacks of "Enhancement"`;
 	},
-	onUse: resolveDoNothing,
 };

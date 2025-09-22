@@ -1,7 +1,6 @@
 import { calculateMultiplier } from "../utils";
 import { CardTargetType } from "../card-target";
 import { CardInfo } from "shared/types/battle/cards";
-import { resolveDamageOnce } from "../generic-on-use-resolvers/damageOnce";
 
 export const lightningStorm: CardInfo = {
 	displayName: "Lightning Storm",
@@ -13,5 +12,4 @@ export const lightningStorm: CardInfo = {
 		const calculated = calculateMultiplier(this.base, quality);
 		return `Summon a lightning storm, dealing ${calculated}% of attack as damage to a all enemies.`;
 	},
-	onUse: resolveDamageOnce,
 };

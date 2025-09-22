@@ -5,7 +5,7 @@ import { enhance } from "./cards/enhance";
 import { CardInfo } from "shared/types/battle/cards";
 import { tripleAttack } from "./cards/tripleAttack";
 
-export const cards = {
+export const CARD = {
 	fireball,
 	lightningStorm,
 	enhance,

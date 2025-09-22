@@ -2,14 +2,20 @@ import { toastPlayers } from "server/toast/toast";
 import { Combatant, isOwnerByPlayer, isPlayerCombatant, PlayerCombatant } from "./combatant";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattleClient, CardInput, PlayCardInput } from "shared/types/battle/battle";
+import {
+	BattleClient,
+	CardInput,
+	OnUseReplicationInfo,
+	PlayCardInput,
+} from "shared/types/battle/battle";
 import { isCardCheck, remotes } from "shared/remotes/remo";
 import { t } from "@rbxts/t";
-import { cards } from "shared/data/cards";
+import { CARD } from "shared/data/cards";
 import { getCardTargets } from "./targeting";
 import { Card } from "shared/types/battle/cards";
 import { ArrayUtilities } from "@rbxts/luau-polyfill";
-import { OnUseReplicationInfo } from "shared/types/battle/shared";
+import { CardName } from "shared/data/cards/codenames";
+import { CARD_RESOLVERS } from "./card-resolvers";
 
 export class Battle {
 	// Metadata
@@ -122,8 +128,8 @@ export class Battle {
 			result.push({ player: player, action: input });
 		}
 		result.sort((a, b) => {
-			const priorityA = cards[a.action.cardUsed.card].priority;
-			const priorityB = cards[b.action.cardUsed.card].priority;
+			const priorityA = CARD[a.action.cardUsed.card].priority;
+			const priorityB = CARD[b.action.cardUsed.card].priority;
 			return priorityA > priorityB;
 		});
 		return result;
@@ -139,7 +145,7 @@ export class Battle {
 
 		user.controller.spendCard(input.action.cardUsed);
 
-		const card = cards[input.action.cardUsed.card];
+		const card = CARD[input.action.cardUsed.card];
 		const targets = getCardTargets(
 			card.cardTarget,
 			user,
@@ -153,20 +159,11 @@ export class Battle {
 		// TODO: Replicate effects and await for players to finish
 		const output = `Player ${input.player.Name} used card ${input.action.cardUsed.card}`;
 		toastPlayers(this.participants, output);
-		const initializer = remotes.ReplicateCardOnUse;
-		const receiver = remotes.ReplicateCardOnUseFinished;
-		await collectPlayerResponses({
-			players: this.participants,
-			collectionEvent: receiver,
-			timeout: 1,
-			initialization: (player) =>
-				initializer.fire(
-					player,
-					input.action.cardUsed.card,
-					input.action.targetSlot,
-					replicationInfo,
-				),
-		});
+		return await this.awaitOnUseReplication(
+			input.action.cardUsed.card,
+			input.action.targetSlot,
+			replicationInfo,
+		);
 	}
 
 	private resolveCardUse(
@@ -174,15 +171,25 @@ export class Battle {
 		user: PlayerCombatant,
 		targets: Combatant[],
 	): OnUseReplicationInfo {
-		const cardInfo = cards[cardUsed.card];
-		const onUse = cardInfo.onUse;
-		if (onUse === undefined) {
+		const onUseResolver = CARD_RESOLVERS[cardUsed.card];
+		if (onUseResolver === undefined) {
 			warn(`Resolver for card ${cardUsed.card} does not exist.`);
 			return [];
 		}
-		return onUse(cardInfo, cardUsed.quality, user, targets);
+		return onUseResolver(cardUsed.card, cardUsed.quality, user, targets);
 	}
 	// !SECTION
+
+	private awaitOnUseReplication(card: CardName, slot: number, info: OnUseReplicationInfo) {
+		const initializer = remotes.ReplicateCardOnUse;
+		const receiver = remotes.ReplicateCardOnUseFinished;
+		return collectPlayerResponses({
+			players: this.participants,
+			collectionEvent: receiver,
+			timeout: 1,
+			initialization: (player) => initializer.fire(player, card, slot, info),
+		});
+	}
 
 	// TODO: Extract I guess
 	private collectPlayersCardInput(players: Player[]) {

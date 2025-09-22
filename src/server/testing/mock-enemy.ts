@@ -2,7 +2,6 @@ import { Combatant } from "server/battle/combatant";
 import { MoveController } from "server/battle/controllers/move-controller";
 import { BaseStats } from "shared/types/battle/shared";
 
-
 const stats1: BaseStats = {
 	attack: 12,
 	defense: 5,
@@ -11,6 +10,6 @@ const stats1: BaseStats = {
 };
 
 export const mockEnemyData: Array<Combatant> = [
-	new Combatant(1, stats1, new MoveController(), true),
-	new Combatant(2, stats1, new MoveController(), true),
+	new Combatant("a", true, 1, stats1, new MoveController()),
+	new Combatant("a", true, 2, stats1, new MoveController()),
 ];
