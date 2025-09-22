@@ -1,7 +1,7 @@
 import { Players } from "@rbxts/services";
 import { Combatant } from "server/battle/combatant";
 import { CardController } from "server/battle/controllers/card-controller";
-import { Card } from "shared/types/cards";
+import { Card } from "shared/types/battle/cards";
 
 const mockDeck = new Array<Card>();
 for (const _ of $range(1, 1)) {

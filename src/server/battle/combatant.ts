@@ -1,14 +1,14 @@
 import { produce } from "@rbxts/immut";
 import { CardController } from "./controllers/card-controller";
 import { MoveController } from "./controllers/move-controller";
+import { ModelName } from "shared/types/utils";
 import {
 	BaseStats,
 	BattleStats,
-	CombatantClient,
 	CombatantClientShared,
 	ICombatant,
-} from "shared/types/battle";
-import { ModelName } from "shared/types/utils";
+} from "shared/types/battle/shared";
+import { CombatantClient } from "shared/types/battle/battle";
 
 export type PlayerCombatant = Combatant & {
 	controller: CardController;
@@ -55,6 +55,10 @@ export class Combatant implements ICombatant {
 			};
 		}
 		return { ...shared };
+	}
+
+	public getStats(): Readonly<BattleStats> {
+		return this.stats;
 	}
 
 	// Returns the actual amount of damage taken

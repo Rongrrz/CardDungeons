@@ -13,6 +13,7 @@
 	"eslint.format.enable": true,
 	"cSpell.words": [
 		"Fadetime",
+		"maxhp",
 		"rbxts",
 		"uistroke"
 	]

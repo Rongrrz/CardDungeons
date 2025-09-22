@@ -1,6 +1,6 @@
 import React, { ReactNode, useEffect, useState } from "@rbxts/react";
 import { cards } from "shared/data/cards";
-import { BattleCard } from "./battle-card";
+import { BattleCard } from "./card";
 import { useMotion } from "@rbxts/pretty-react-hooks";
 import { useAtom } from "@rbxts/react-charm";
 import { isCardContainerIn, playerHand } from "client/atoms/battle-inputting";

@@ -1,4 +1,4 @@
-import { CardInfo } from "shared/types/cards";
+import { CardInfo } from "shared/types/battle/cards";
 import { CardTargetType } from "../card-target";
 import { resolveDoNothing } from "../generic-on-use-resolvers/doNothing";
 

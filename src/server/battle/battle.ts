@@ -2,13 +2,14 @@ import { toastPlayers } from "server/toast/toast";
 import { Combatant, isOwnerByPlayer, isPlayerCombatant, PlayerCombatant } from "./combatant";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattleClient, CardInput, OnUseReplicationInfo, PlayCardInput } from "shared/types/battle";
+import { BattleClient, CardInput, PlayCardInput } from "shared/types/battle/battle";
 import { isCardCheck, remotes } from "shared/remotes/remo";
 import { t } from "@rbxts/t";
 import { cards } from "shared/data/cards";
 import { getCardTargets } from "./targeting";
-import { Card } from "shared/types/cards";
+import { Card } from "shared/types/battle/cards";
 import { ArrayUtilities } from "@rbxts/luau-polyfill";
+import { OnUseReplicationInfo } from "shared/types/battle/shared";
 
 export class Battle {
 	// Metadata
@@ -16,10 +17,8 @@ export class Battle {
 	private combatants = new Array<Combatant>();
 	private turn = 0;
 
-	public constructor(
-		playerTeam: Array<Combatant>,
-		enemyTeam: Array<Combatant & { isEnemy: true }>,
-	) {
+	// TODO: Find a way to say that enemyTeam Combatants isEnemy must be true
+	public constructor(playerTeam: Array<Combatant>, enemyTeam: Array<Combatant>) {
 		this.combatants = ArrayUtilities.concat(playerTeam, enemyTeam);
 		this.participants = this.extractPlayersOfTeam(this.combatants);
 	}
@@ -61,7 +60,7 @@ export class Battle {
 			await this.processBatchPlayerAction(inputsToProcess);
 		}
 		toastPlayers(this.participants, "All players have ended their turn!");
-		print("Combatants after player phase");
+		print(this.combatants);
 	}
 
 	private async entityPhase() {
@@ -159,7 +158,7 @@ export class Battle {
 		await collectPlayerResponses({
 			players: this.participants,
 			collectionEvent: receiver,
-			timeout: BF_INIT_TIME,
+			timeout: 1,
 			initialization: (player) =>
 				initializer.fire(
 					player,

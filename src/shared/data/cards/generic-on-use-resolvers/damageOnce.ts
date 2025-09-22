@@ -1,5 +1,5 @@
-import { OnUseResolver, ICombatant, OnUseReplicationInfo } from "shared/types/battle";
-import { CardInfo } from "shared/types/cards";
+import { CardInfo, OnUseResolver } from "shared/types/battle/cards";
+import { ICombatant, OnUseReplicationInfo } from "shared/types/battle/shared";
 
 export const resolveDamageOnce: OnUseResolver = (
 	card: CardInfo,
@@ -13,7 +13,9 @@ export const resolveDamageOnce: OnUseResolver = (
 		result.push({
 			isEnemy: t.isEnemy,
 			slot: t.slot,
-			numbers: [{ damage: damageTaken, crit: false }],
+			numbers: [{ number: damageTaken, numberType: "normal" }],
+			finalHp: t.getStats().hp,
+			finalMaxHp: t.getStats().maxHp,
 		});
 	}
 	return result;

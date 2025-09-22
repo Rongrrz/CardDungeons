@@ -1,6 +1,7 @@
 import { Combatant } from "server/battle/combatant";
 import { MoveController } from "server/battle/controllers/move-controller";
-import { BaseStats } from "shared/types/battle";
+import { BaseStats } from "shared/types/battle/shared";
+
 
 const stats1: BaseStats = {
 	attack: 12,

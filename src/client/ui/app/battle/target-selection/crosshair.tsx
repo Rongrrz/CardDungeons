@@ -3,11 +3,6 @@ import React, { useEffect } from "@rbxts/react";
 import { useLifetimeAsync } from "@rbxts/react-lifetime-component";
 import { Selected } from "client/constants/selected";
 
-type TargetCrosshairProps = {
-	target: Model;
-	selected: Selected;
-};
-
 const transparencyGoal: Record<Selected, number> = {
 	[Selected.NotSelected]: 0.75,
 	[Selected.Selected]: 0,
@@ -20,7 +15,7 @@ const colorGoal: Record<Selected, Color3> = {
 	[Selected.Partially]: Color3.fromRGB(255, 255, 255),
 };
 
-export function TargetCrosshair(props: TargetCrosshairProps) {
+export function TargetCrosshair(props: { target: Model; selected: Selected }) {
 	const [color, colorMotion] = useMotion<Color3>(Color3.fromRGB(255, 255, 255));
 	const [transparency, transparencyMotion] = useMotion(0.75);
 	const [rotation, rotationMotion] = useMotion(0);

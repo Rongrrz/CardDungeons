@@ -1,8 +1,9 @@
 import { Client, createRemotes, remote, Server } from "@rbxts/remo";
 import { t } from "@rbxts/t";
 import { cardCodenames, CardName } from "shared/data/cards/codenames";
-import { BattleClient, CardInput, OnUseReplicationInfo } from "shared/types/battle";
-import { Card } from "shared/types/cards";
+import { BattleClient, CardInput } from "shared/types/battle/battle";
+import { Card } from "shared/types/battle/cards";
+import { OnUseReplicationInfo } from "shared/types/battle/shared";
 
 export const isCardCheck = t.strictInterface({
 	card: t.literalList([...cardCodenames]),

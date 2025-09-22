@@ -3,7 +3,7 @@ import React, { ReactNode, useEffect } from "@rbxts/react";
 import { useAtom } from "@rbxts/react-charm";
 import { selectedCardSlotAtom } from "client/atoms/battle-inputting";
 import { cards } from "shared/data/cards";
-import { Card } from "shared/types/cards";
+import { Card } from "shared/types/battle/cards";
 
 type BattleCardProps = Card & {
 	onHoverStart: () => void;
