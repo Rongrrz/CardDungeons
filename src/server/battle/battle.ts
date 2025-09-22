@@ -2,25 +2,25 @@ import { toastPlayers } from "server/toast/toast";
 import { Combatant, isOwnerByPlayer, isPlayerCombatant, PlayerCombatant } from "./combatant";
 import { collectPlayerResponses } from "server/utils/collect-player-responses";
 import { BF_INIT_TIME, PLAYER_TURN_TIME } from "server/constants/battle";
-import { BattleClient, CardInput, PlayCardInput } from "shared/types/battle";
+import { BattleClient, CardInput, PlayCardInput } from "shared/types/battle/battle";
 import { isCardCheck, remotes } from "shared/remotes/remo";
 import { t } from "@rbxts/t";
 import { cards } from "shared/data/cards";
 import { getCardTargets } from "./targeting";
-import { Card } from "shared/types/cards";
+import { Card } from "shared/types/battle/cards";
+import { ArrayUtilities } from "@rbxts/luau-polyfill";
+import { OnUseReplicationInfo } from "shared/types/battle/shared";
 
 export class Battle {
 	// Metadata
 	private participants = new Array<Player>();
-
-	private playerTeam = new Array<Combatant>();
-	private enemyTeam = new Array<Combatant>();
+	private combatants = new Array<Combatant>();
 	private turn = 0;
 
+	// TODO: Find a way to say that enemyTeam Combatants isEnemy must be true
 	public constructor(playerTeam: Array<Combatant>, enemyTeam: Array<Combatant>) {
-		this.playerTeam = playerTeam;
-		this.enemyTeam = enemyTeam;
-		this.participants = this.extractPlayersOfTeam(this.playerTeam);
+		this.combatants = ArrayUtilities.concat(playerTeam, enemyTeam);
+		this.participants = this.extractPlayersOfTeam(this.combatants);
 	}
 
 	// SECTION Battle - Public API
@@ -52,7 +52,7 @@ export class Battle {
 	}
 
 	private async playerPhase() {
-		const playerCombatants = this.getAlivePlayerCombatants(this.playerTeam);
+		const playerCombatants = this.getAlivePlayerCombatants();
 		while (playerCombatants.size() > 0) {
 			const activePlayers = playerCombatants.map((c) => c.controller.owner);
 			const { responses, pending } = await this.collectPlayersCardInput(activePlayers);
@@ -60,9 +60,7 @@ export class Battle {
 			await this.processBatchPlayerAction(inputsToProcess);
 		}
 		toastPlayers(this.participants, "All players have ended their turn!");
-		print("Player & enemy team after player phase");
-		print(this.playerTeam);
-		print(this.enemyTeam);
+		print(this.combatants);
 	}
 
 	private async entityPhase() {
@@ -84,8 +82,7 @@ export class Battle {
 	private toClientRepresentation(): BattleClient {
 		return {
 			turn: this.turn,
-			players: this.playerTeam.map((e) => e.toClientRepresentation()),
-			enemies: this.enemyTeam.map((e) => e.toClientRepresentation()),
+			combatants: this.combatants.map((c) => c.toClientRepresentation()),
 		};
 	}
 
@@ -95,8 +92,8 @@ export class Battle {
 		return players;
 	}
 
-	private getAlivePlayerCombatants(team: Combatant[]): Array<PlayerCombatant> {
-		return this.playerTeam.filter(
+	private getAlivePlayerCombatants(): Array<PlayerCombatant> {
+		return this.combatants.filter(
 			(c): c is PlayerCombatant => isPlayerCombatant(c) && c.isAlive,
 		);
 	}
@@ -137,7 +134,7 @@ export class Battle {
 	}
 
 	private async processSinglePlayerAction(input: PlayCardInput) {
-		const user = this.getPlayerCombatant(this.playerTeam, input.player);
+		const user = this.getPlayerCombatant(this.combatants, input.player);
 		if (user === undefined) return warn(`No combatant found for player ${input.player.Name}`);
 
 		user.controller.spendCard(input.action.cardUsed);
@@ -147,8 +144,7 @@ export class Battle {
 			card.cardTarget,
 			user,
 			input.action.targetSlot,
-			this.playerTeam,
-			this.enemyTeam,
+			this.combatants,
 		);
 
 		// TODO: Add before/after card effect hooks
@@ -157,14 +153,34 @@ export class Battle {
 		// TODO: Replicate effects and await for players to finish
 		const output = `Player ${input.player.Name} used card ${input.action.cardUsed.card}`;
 		toastPlayers(this.participants, output);
-		task.wait(2); // Artificial replication wait-time
+		const initializer = remotes.ReplicateCardOnUse;
+		const receiver = remotes.ReplicateCardOnUseFinished;
+		await collectPlayerResponses({
+			players: this.participants,
+			collectionEvent: receiver,
+			timeout: 1,
+			initialization: (player) =>
+				initializer.fire(
+					player,
+					input.action.cardUsed.card,
+					input.action.targetSlot,
+					replicationInfo,
+				),
+		});
 	}
 
-	private resolveCardUse(cardUsed: Card, user: PlayerCombatant, targets: Combatant[]) {
+	private resolveCardUse(
+		cardUsed: Card,
+		user: PlayerCombatant,
+		targets: Combatant[],
+	): OnUseReplicationInfo {
 		const cardInfo = cards[cardUsed.card];
 		const onUse = cardInfo.onUse;
-		if (onUse === undefined) return warn(`Resolver for card ${cardUsed.card} does not exist.`);
-		onUse(cardInfo, cardUsed.quality, user, targets);
+		if (onUse === undefined) {
+			warn(`Resolver for card ${cardUsed.card} does not exist.`);
+			return [];
+		}
+		return onUse(cardInfo, cardUsed.quality, user, targets);
 	}
 	// !SECTION
 
@@ -190,7 +206,7 @@ export class Battle {
 				}),
 			),
 			initialization: (player) => {
-				const combatant = this.playerTeam.find((c): c is PlayerCombatant =>
+				const combatant = this.combatants.find((c): c is PlayerCombatant =>
 					isOwnerByPlayer(c, player),
 				);
 				if (combatant === undefined) return print("Player combatant not found");

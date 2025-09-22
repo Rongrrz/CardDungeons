@@ -1,6 +1,6 @@
 import { atom } from "@rbxts/charm";
 import { Selected } from "client/constants/selected";
-import { Card } from "shared/types/cards";
+import { Card } from "shared/types/battle/cards";
 
 // For whenever the player is inputting, this is if the card container should be in or not.
 export const isCardContainerIn = atom<boolean>(false);
@@ -16,3 +16,12 @@ export type CardTarget = {
 	selected: Selected;
 };
 export const cardTargets = atom<Array<CardTarget>>([]);
+
+export type CombatantModel = {
+	model: Model;
+	slot: number;
+	isEnemy: boolean;
+	maxhp: number;
+	hp: number;
+};
+export const combatantModels = atom<Array<CombatantModel>>([]);

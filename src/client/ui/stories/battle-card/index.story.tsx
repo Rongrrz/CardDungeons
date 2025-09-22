@@ -1,9 +1,9 @@
 import { CreateReactStory, Number } from "@rbxts/ui-labs";
 import React from "@rbxts/react";
 import ReactRoblox from "@rbxts/react-roblox";
-import { CardContainer } from "client/ui/app/battle-card";
+import { CardContainer } from "client/ui/app/battle/card-interface";
 import { isCardContainerIn, playerHand } from "client/atoms/battle-inputting";
-import { Card } from "shared/types/cards";
+import { Card } from "shared/types/battle/cards";
 
 const controls = {
 	amount: Number(1, 1, 10),

@@ -1,9 +1,10 @@
 import { subscribe } from "@rbxts/charm";
-import { produce } from "@rbxts/immut";
+import Immut, { produce } from "@rbxts/immut";
 import { Players, ReplicatedStorage, Workspace } from "@rbxts/services";
 import { Trove } from "@rbxts/trove";
 import {
 	cardTargets,
+	combatantModels,
 	isCardContainerIn,
 	playerHand,
 	selectedCardSlotAtom,
@@ -13,8 +14,8 @@ import { Selected } from "client/constants/selected";
 import { cards } from "shared/data/cards";
 import { CardTargetType, isTargetingAll } from "shared/data/cards/card-target";
 import { remotes } from "shared/remotes/remo";
-import { BattleClient } from "shared/types/battle";
-import { Card } from "shared/types/cards";
+import { BattleClient } from "shared/types/battle/battle";
+import { Card } from "shared/types/battle/cards";
 
 const mouse = Players.LocalPlayer.GetMouse();
 const field = {
@@ -165,39 +166,83 @@ function handleReceivePlayerInput(hand: Array<Card>) {
 }
 
 function handleInitializeBattleVisuals(battle: BattleClient) {
-	battle.enemies.forEach((entity) => {
-		const model = ReplicatedStorage.Models[entity.model];
-		const clone = model.Clone();
+	battle.combatants
+		.filter((c) => c.isEnemy === true)
+		.forEach((entity) => {
+			const model = ReplicatedStorage.Models[entity.model];
+			const clone = model.Clone();
 
-		clone.Name = `e-${entity.slot}`;
-		const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
-		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
-		clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
-		clone.Parent = Workspace.Temporary.BattleEnemies;
+			clone.Name = `e-${entity.slot}`;
+			const node = Workspace.Battlefield.Enemy.FindFirstChild(entity.slot) as unknown as Part;
+			const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
+			clone.PivotTo(node.CFrame.mul(new CFrame(0, yBump.Y, 0)));
+			clone.Parent = Workspace.Temporary.BattleEnemies;
 
-		field.enemies.push({
-			model: clone,
-			slot: entity.slot,
+			field.enemies.push({
+				model: clone,
+				slot: entity.slot,
+			});
+			combatantModels((current) =>
+				produce(current, (draft) => {
+					Immut.table.insert(draft, {
+						model: clone,
+						slot: entity.slot,
+						isEnemy: entity.isEnemy,
+						hp: entity.stats.hp,
+						maxhp: entity.stats.maxHp,
+					});
+				}),
+			);
 		});
-	});
 
-	battle.players.forEach((entity) => {
-		const clone = playerModel.Clone();
-		clone.Name = `p-${entity.slot}`;
+	battle.combatants
+		.filter((c) => c.isEnemy === false)
+		.forEach((entity) => {
+			const clone = playerModel.Clone();
+			clone.Name = `p-${entity.slot}`;
 
-		const node = Workspace.Battlefield.Player.FindFirstChild(entity.slot) as unknown as Part;
-		const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
-		clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));
-		clone.Parent = Workspace.Temporary.BattlePlayers;
+			const node = Workspace.Battlefield.Player.FindFirstChild(
+				entity.slot,
+			) as unknown as Part;
+			const yBump = new Vector3(0, clone.GetExtentsSize().Y / 2 - node.Size.Y / 2, 0);
+			clone.PivotTo(node.CFrame.add(new Vector3(0, yBump.Y, 0)));
+			clone.Parent = Workspace.Temporary.BattlePlayers;
 
-		field.players.push({
-			model: clone,
-			slot: entity.slot,
-			ownerUserId: entity.ownerUserId,
+			field.players.push({
+				model: clone,
+				slot: entity.slot,
+				ownerUserId: entity.ownerUserId,
+			});
+			combatantModels((current) =>
+				produce(current, (draft) => {
+					Immut.table.insert(draft, {
+						model: clone,
+						slot: entity.slot,
+						isEnemy: entity.isEnemy,
+						hp: entity.stats.hp,
+						maxhp: entity.stats.maxHp,
+					});
+				}),
+			);
 		});
-	});
 	remotes.ReceiveBattleInitialized.fire(); // Tells the player that we have finished initializing
 }
 
 remotes.SendBattleSnapshot.connect(handleInitializeBattleVisuals);
 remotes.SendReadyForPlayerInput.connect(handleReceivePlayerInput);
+remotes.ReplicateCardOnUse.connect((card, targetSlot, replicationInfo) => {
+	print(`Card ${card} use on slot ${targetSlot}`);
+	combatantModels((current) =>
+		produce(current, (draft) => {
+			// Brute-force update HP & MaxHP
+			for (const target of replicationInfo) {
+				const model = draft.find(
+					(m) => m.slot === target.slot && m.isEnemy === target.isEnemy,
+				);
+				if (model === undefined) continue;
+				model.hp = target.finalHp;
+				model.maxhp = target.finalMaxHp;
+			}
+		}),
+	);
+});

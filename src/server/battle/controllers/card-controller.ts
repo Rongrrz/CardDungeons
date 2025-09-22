@@ -1,5 +1,5 @@
 import { knuthShuffleInPlace } from "shared/dsa/knuthShuffle";
-import { Card } from "shared/types/cards";
+import { Card } from "shared/types/battle/cards";
 import { MoveController } from "./move-controller";
 
 export class CardController {

@@ -4,20 +4,25 @@ import { Combatant, PlayerCombatant } from "./combatant";
 type TargetResolver = (
 	user: Combatant,
 	targetSlot: number,
-	playerTeam: Combatant[],
-	enemyTeam: Combatant[],
+	combatants: Combatant[],
 ) => Array<Combatant>;
 
-const allTargets: TargetResolver = (_u, _s, playerTeam, enemyTeam) => [...playerTeam, ...enemyTeam];
+const allTargets: TargetResolver = (_u, _s, combatants) => [...combatants];
+
 const userOnly: TargetResolver = (user) => [user];
-const allEnemyTeam: TargetResolver = (_u, _s, _pt, enemyTeam) => enemyTeam;
-const allUserTeam: TargetResolver = (_u, _s, playerTeam) => playerTeam;
-const singleEnemy: TargetResolver = (_u, slot, _pt, enemyTeam) => {
-	const enemy = enemyTeam.find((c) => c.slot === slot);
+
+const allEnemyTeam: TargetResolver = (_u, _s, combatants) =>
+	combatants.filter((c) => c.isEnemy === true);
+
+const allUserTeam: TargetResolver = (_u, _s, combatants) =>
+	combatants.filter((c) => c.isEnemy === false);
+
+const singleEnemy: TargetResolver = (_u, slot, combatants) => {
+	const enemy = combatants.find((c) => c.slot === slot && c.isEnemy === true);
 	return enemy ? [enemy] : [];
 };
 const singleAlly: TargetResolver = (_u, slot, playerTeam) => {
-	const ally = playerTeam.find((c) => c.slot === slot);
+	const ally = playerTeam.find((c) => c.slot === slot && c.isEnemy === false);
 	return ally ? [ally] : [];
 };
 
@@ -34,9 +39,8 @@ export function getCardTargets(
 	targetType: CardTargetType,
 	user: PlayerCombatant,
 	targetSlot: number,
-	playerTeam: Combatant[],
-	enemyTeam: Combatant[],
+	combatants: Combatant[],
 ): Array<Combatant> {
 	const resolver = resolvers[targetType];
-	return resolver ? resolver(user, targetSlot, playerTeam, enemyTeam) : [];
+	return resolver ? resolver(user, targetSlot, combatants) : [];
 }

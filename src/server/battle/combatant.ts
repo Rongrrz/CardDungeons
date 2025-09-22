@@ -1,14 +1,14 @@
 import { produce } from "@rbxts/immut";
 import { CardController } from "./controllers/card-controller";
 import { MoveController } from "./controllers/move-controller";
+import { ModelName } from "shared/types/utils";
 import {
 	BaseStats,
 	BattleStats,
-	CombatantClient,
 	CombatantClientShared,
 	ICombatant,
-} from "shared/types/battle";
-import { ModelName } from "shared/types/utils";
+} from "shared/types/battle/shared";
+import { CombatantClient } from "shared/types/battle/battle";
 
 export type PlayerCombatant = Combatant & {
 	controller: CardController;
@@ -19,13 +19,20 @@ export class Combatant implements ICombatant {
 	private stats: BattleStats;
 	public isAlive: boolean;
 	public controller: CardController | MoveController;
+	public readonly isEnemy: boolean;
 	public readonly slot: number;
 
-	constructor(slot: number, stats: BaseStats, controller: CardController | MoveController) {
+	constructor(
+		slot: number,
+		stats: BaseStats,
+		controller: CardController | MoveController,
+		isEnemy?: boolean,
+	) {
 		this.stats = produce(stats, (draft) => {
 			draft.hp = draft.hp ?? draft.maxHp;
 		}) as BattleStats;
 
+		this.isEnemy = isEnemy ?? false;
 		this.isAlive = this.stats.hp > 0;
 		this.controller = controller;
 		this.slot = slot;
@@ -38,6 +45,7 @@ export class Combatant implements ICombatant {
 			stats: this.stats,
 			model: this.model,
 			slot: this.slot,
+			isEnemy: this.isEnemy,
 		};
 		if (isPlayerCombatant(this)) {
 			return {
@@ -47,6 +55,10 @@ export class Combatant implements ICombatant {
 			};
 		}
 		return { ...shared };
+	}
+
+	public getStats(): Readonly<BattleStats> {
+		return this.stats;
 	}
 
 	// Returns the actual amount of damage taken
